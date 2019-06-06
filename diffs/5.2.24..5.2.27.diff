@@ -1,0 +1,99 @@
+diff --git a/LaravelDiffApp/.env.example b/LaravelDiffApp/.env.example
+index 86aab15..9a9d0dc 100644
+--- a/LaravelDiffApp/.env.example
++++ b/LaravelDiffApp/.env.example
+@@ -3,6 +3,7 @@ APP_DEBUG=true
+ APP_KEY=SomeRandomString
+ APP_URL=http://localhost
+ 
++DB_CONNECTION=mysql
+ DB_HOST=127.0.0.1
+ DB_PORT=3306
+ DB_DATABASE=homestead
+diff --git a/LaravelDiffApp/app/Http/routes.php b/LaravelDiffApp/app/Http/routes.php
+index 084f4c3..1ad3549 100644
+--- a/LaravelDiffApp/app/Http/routes.php
++++ b/LaravelDiffApp/app/Http/routes.php
+@@ -11,10 +11,6 @@
+ |
+ */
+ 
+-Route::group(['middleware' => ['web']], function () {
+-
+-    Route::get('/', function () {
+-        return view('welcome');
+-    });
+-
++Route::get('/', function () {
++    return view('welcome');
+ });
+diff --git a/LaravelDiffApp/app/Providers/RouteServiceProvider.php b/LaravelDiffApp/app/Providers/RouteServiceProvider.php
+index d50b1c0..bde0881 100644
+--- a/LaravelDiffApp/app/Providers/RouteServiceProvider.php
++++ b/LaravelDiffApp/app/Providers/RouteServiceProvider.php
+@@ -8,7 +8,7 @@ use Illuminate\Foundation\Support\Providers\RouteServiceProvider as ServiceProvi
+ class RouteServiceProvider extends ServiceProvider
+ {
+     /**
+-     * This namespace is applied to the controller routes in your routes file.
++     * This namespace is applied to your controller routes.
+      *
+      * In addition, it is set as the URL generator's root namespace.
+      *
+@@ -37,7 +37,24 @@ class RouteServiceProvider extends ServiceProvider
+      */
+     public function map(Router $router)
+     {
+-        $router->group(['namespace' => $this->namespace], function ($router) {
++        $this->mapWebRoutes($router);
++
++        //
++    }
++
++    /**
++     * Define the "web" routes for the application.
++     *
++     * These routes all receive session state, CSRF protection, etc.
++     *
++     * @param  \Illuminate\Routing\Router  $router
++     * @return void
++     */
++    protected function mapWebRoutes(Router $router)
++    {
++        $router->group([
++            'namespace' => $this->namespace, 'middleware' => 'web',
++        ], function ($router) {
+             require app_path('Http/routes.php');
+         });
+     }
+diff --git a/LaravelDiffApp/composer.json b/LaravelDiffApp/composer.json
+index f516628..4943e17 100644
+--- a/LaravelDiffApp/composer.json
++++ b/LaravelDiffApp/composer.json
+@@ -36,11 +36,11 @@
+             "php artisan key:generate"
+         ],
+         "post-install-cmd": [
+-            "php artisan clear-compiled",
++            "Illuminate\\Foundation\\ComposerScripts::postInstall",
+             "php artisan optimize"
+         ],
+         "post-update-cmd": [
+-            "php artisan clear-compiled",
++            "Illuminate\\Foundation\\ComposerScripts::postUpdate",
+             "php artisan optimize"
+         ]
+     },
+diff --git a/LaravelDiffApp/config/database.php b/LaravelDiffApp/config/database.php
+index def1e56..8451a62 100644
+--- a/LaravelDiffApp/config/database.php
++++ b/LaravelDiffApp/config/database.php
+@@ -48,7 +48,7 @@ return [
+ 
+         'sqlite' => [
+             'driver' => 'sqlite',
+-            'database' => database_path('database.sqlite'),
++            'database' => env('DB_DATABASE', database_path('database.sqlite')),
+             'prefix' => '',
+         ],
+ 

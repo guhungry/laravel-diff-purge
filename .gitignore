@@ -1,0 +1,11 @@
+# macOS
+.DS_Store
+
+# project
+LaravelDiffApp/yarn.lock
+LaravelDiffApp/package-lock.json
+LaravelDiffApp/composer.lock
+
+# compiled files
+LaravelDiffApp/public/css/app.css
+LaravelDiffApp/public/js/app.js

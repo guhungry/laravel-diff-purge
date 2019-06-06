@@ -1,0 +1,90 @@
+diff --git a/LaravelDiffApp/config/database.php b/LaravelDiffApp/config/database.php
+index f6cf86b..503da61 100644
+--- a/LaravelDiffApp/config/database.php
++++ b/LaravelDiffApp/config/database.php
+@@ -81,7 +81,6 @@ return [
+             'database' => env('DB_DATABASE', 'forge'),
+             'username' => env('DB_USERNAME', 'forge'),
+             'password' => env('DB_PASSWORD', ''),
+-            'charset'  => 'utf8',
+             'prefix'   => '',
+         ],
+ 
+diff --git a/LaravelDiffApp/package.json b/LaravelDiffApp/package.json
+index b5d941f..232bc7e 100644
+--- a/LaravelDiffApp/package.json
++++ b/LaravelDiffApp/package.json
+@@ -2,6 +2,6 @@
+   "private": true,
+   "devDependencies": {
+     "gulp": "^3.8.8",
+-    "laravel-elixir": "^2.0.0"
++    "laravel-elixir": "^1.0.0"
+   }
+ }
+diff --git a/LaravelDiffApp/phpunit.xml b/LaravelDiffApp/phpunit.xml
+index 276262d..d66acd0 100644
+--- a/LaravelDiffApp/phpunit.xml
++++ b/LaravelDiffApp/phpunit.xml
+@@ -14,11 +14,6 @@
+             <directory>./tests/</directory>
+         </testsuite>
+     </testsuites>
+-    <filter>
+-        <whitelist>
+-            <directory suffix=".php">app/</directory>
+-        </whitelist>
+-    </filter>
+     <php>
+         <env name="APP_ENV" value="testing"/>
+         <env name="CACHE_DRIVER" value="array"/>
+diff --git a/LaravelDiffApp/resources/views/errors/503.blade.php b/LaravelDiffApp/resources/views/errors/503.blade.php
+index 123339b..410ac07 100644
+--- a/LaravelDiffApp/resources/views/errors/503.blade.php
++++ b/LaravelDiffApp/resources/views/errors/503.blade.php
+@@ -1,4 +1,3 @@
+-<!DOCTYPE html>
+ <html>
+     <head>
+         <title>Be right back.</title>
+@@ -6,14 +5,11 @@
+         <link href='//fonts.googleapis.com/css?family=Lato:100' rel='stylesheet' type='text/css'>
+ 
+         <style>
+-            html, body {
+-                height: 100%;
+-            }
+-
+             body {
+                 margin: 0;
+                 padding: 0;
+                 width: 100%;
++                height: 100%;
+                 color: #B0BEC5;
+                 display: table;
+                 font-weight: 100;
+diff --git a/LaravelDiffApp/resources/views/welcome.blade.php b/LaravelDiffApp/resources/views/welcome.blade.php
+index 031d26f..746adf5 100644
+--- a/LaravelDiffApp/resources/views/welcome.blade.php
++++ b/LaravelDiffApp/resources/views/welcome.blade.php
+@@ -1,4 +1,3 @@
+-<!DOCTYPE html>
+ <html>
+     <head>
+         <title>Laravel</title>
+@@ -6,14 +5,11 @@
+         <link href='//fonts.googleapis.com/css?family=Lato:100' rel='stylesheet' type='text/css'>
+ 
+         <style>
+-            html, body {
+-                height: 100%;
+-            }
+-
+             body {
+                 margin: 0;
+                 padding: 0;
+                 width: 100%;
++                height: 100%;
+                 color: #B0BEC5;
+                 display: table;
+                 font-weight: 100;

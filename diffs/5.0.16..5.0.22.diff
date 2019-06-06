@@ -1,0 +1,13 @@
+diff --git a/LaravelDiffApp/config/services.php b/LaravelDiffApp/config/services.php
+index dddc986..c2fb21a 100644
+--- a/LaravelDiffApp/config/services.php
++++ b/LaravelDiffApp/config/services.php
+@@ -30,7 +30,7 @@ return [
+ 	],
+ 
+ 	'stripe' => [
+-		'model'  => 'User',
++		'model'  => 'App\User',
+ 		'secret' => '',
+ 	],
+ 

@@ -1,0 +1,87 @@
+diff --git a/LaravelDiffApp/app/Http/routes.php b/LaravelDiffApp/app/Http/routes.php
+index 084f4c3..a7c5159 100644
+--- a/LaravelDiffApp/app/Http/routes.php
++++ b/LaravelDiffApp/app/Http/routes.php
+@@ -2,19 +2,30 @@
+ 
+ /*
+ |--------------------------------------------------------------------------
+-| Application Routes
++| Routes File
+ |--------------------------------------------------------------------------
+ |
+-| Here is where you can register all of the routes for an application.
++| Here is where you will register all of the routes in an application.
+ | It's a breeze. Simply tell Laravel the URIs it should respond to
+ | and give it the controller to call when that URI is requested.
+ |
+ */
+ 
+-Route::group(['middleware' => ['web']], function () {
++Route::get('/', function () {
++    return view('welcome');
++});
+ 
+-    Route::get('/', function () {
+-        return view('welcome');
+-    });
++/*
++|--------------------------------------------------------------------------
++| Application Routes
++|--------------------------------------------------------------------------
++|
++| This route group applies the "web" middleware group to every route
++| it contains. The "web" middleware group is defined in your HTTP
++| kernel and includes session state, CSRF protection, and more.
++|
++*/
+ 
++Route::group(['middleware' => ['web']], function () {
++    //
+ });
+diff --git a/LaravelDiffApp/app/User.php b/LaravelDiffApp/app/User.php
+index 75741ae..ef6fe91 100644
+--- a/LaravelDiffApp/app/User.php
++++ b/LaravelDiffApp/app/User.php
+@@ -16,7 +16,7 @@ class User extends Authenticatable
+     ];
+ 
+     /**
+-     * The attributes that should be hidden for arrays.
++     * The attributes excluded from the model's JSON form.
+      *
+      * @var array
+      */
+diff --git a/LaravelDiffApp/config/session.php b/LaravelDiffApp/config/session.php
+index b501055..f1b0042 100644
+--- a/LaravelDiffApp/config/session.php
++++ b/LaravelDiffApp/config/session.php
+@@ -150,17 +150,4 @@ return [
+ 
+     'secure' => false,
+ 
+-    /*
+-    |--------------------------------------------------------------------------
+-    | HTTP Access Only
+-    |--------------------------------------------------------------------------
+-    |
+-    | Setting this value to true will prevent JavaScript from accessing the
+-    | value of the cookie and the cookie will only be accessible through
+-    | the HTTP protocol. You are free to modify this option if needed.
+-    |
+-    */
+-
+-    'http_only' => true,
+-
+ ];
+diff --git a/LaravelDiffApp/storage/framework/.gitignore b/LaravelDiffApp/storage/framework/.gitignore
+index b02b700..953edb7 100644
+--- a/LaravelDiffApp/storage/framework/.gitignore
++++ b/LaravelDiffApp/storage/framework/.gitignore
+@@ -1,6 +1,5 @@
+ config.php
+ routes.php
+-schedule-*
+ compiled.php
+ services.json
+ events.scanned.php

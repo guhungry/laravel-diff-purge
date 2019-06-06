@@ -1,0 +1,36 @@
+diff --git a/LaravelDiffApp/composer.json b/LaravelDiffApp/composer.json
+index e5f2117..60f1d03 100644
+--- a/LaravelDiffApp/composer.json
++++ b/LaravelDiffApp/composer.json
+@@ -19,11 +19,7 @@
+             "database"
+         ],
+         "psr-4": {
+-            "App\\": "app/"
+-        }
+-    },
+-    "autoload-dev": {
+-        "psr-4": {
++            "App\\": "app/",
+             "Tests\\": "tests/"
+         }
+     },
+diff --git a/LaravelDiffApp/package.json b/LaravelDiffApp/package.json
+index 220aff5..5d8582c 100644
+--- a/LaravelDiffApp/package.json
++++ b/LaravelDiffApp/package.json
+@@ -1,10 +1,10 @@
+ {
+   "private": true,
+   "scripts": {
+-    "dev": "node node_modules/cross-env/bin/cross-env.js NODE_ENV=development node_modules/webpack/bin/webpack.js --progress --hide-modules --config=node_modules/laravel-mix/setup/webpack.config.js",
+-    "watch": "node node_modules/cross-env/bin/cross-env.js NODE_ENV=development node_modules/webpack/bin/webpack.js --watch --progress --hide-modules --config=node_modules/laravel-mix/setup/webpack.config.js",
+-    "hot": "node node_modules/cross-env/bin/cross-env.js NODE_ENV=development node_modules/webpack-dev-server/bin/webpack-dev-server.js --inline --hot --config=node_modules/laravel-mix/setup/webpack.config.js",
+-    "production": "node node_modules/cross-env/bin/cross-env.js NODE_ENV=production node_modules/webpack/bin/webpack.js --progress --hide-modules --config=node_modules/laravel-mix/setup/webpack.config.js"
++    "dev": "node_modules/cross-env/bin/cross-env.js NODE_ENV=development node_modules/webpack/bin/webpack.js --progress --hide-modules --config=node_modules/laravel-mix/setup/webpack.config.js",
++    "watch": "node_modules/cross-env/bin/cross-env.js NODE_ENV=development node_modules/webpack/bin/webpack.js --watch --progress --hide-modules --config=node_modules/laravel-mix/setup/webpack.config.js",
++    "hot": "node_modules/cross-env/bin/cross-env.js NODE_ENV=development webpack-dev-server --inline --hot --config=node_modules/laravel-mix/setup/webpack.config.js",
++    "production": "node_modules/cross-env/bin/cross-env.js NODE_ENV=production node_modules/webpack/bin/webpack.js --progress --hide-modules --config=node_modules/laravel-mix/setup/webpack.config.js"
+   },
+   "devDependencies": {
+     "axios": "^0.15.2",

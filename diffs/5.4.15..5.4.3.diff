@@ -1,0 +1,167 @@
+diff --git a/LaravelDiffApp/.gitignore b/LaravelDiffApp/.gitignore
+index c561e9b..b278165 100644
+--- a/LaravelDiffApp/.gitignore
++++ b/LaravelDiffApp/.gitignore
+@@ -1,6 +1,5 @@
+ /node_modules
+ /public/storage
+-/public/hot
+ /storage/*.key
+ /vendor
+ /.idea
+diff --git a/LaravelDiffApp/app/Exceptions/Handler.php b/LaravelDiffApp/app/Exceptions/Handler.php
+index a747e31..21c9784 100644
+--- a/LaravelDiffApp/app/Exceptions/Handler.php
++++ b/LaravelDiffApp/app/Exceptions/Handler.php
+@@ -60,6 +60,6 @@ class Handler extends ExceptionHandler
+             return response()->json(['error' => 'Unauthenticated.'], 401);
+         }
+ 
+-        return redirect()->guest(route('login'));
++        return redirect()->guest('login');
+     }
+ }
+diff --git a/LaravelDiffApp/bootstrap/autoload.php b/LaravelDiffApp/bootstrap/autoload.php
+index 94adc99..3830137 100644
+--- a/LaravelDiffApp/bootstrap/autoload.php
++++ b/LaravelDiffApp/bootstrap/autoload.php
+@@ -15,3 +15,20 @@ define('LARAVEL_START', microtime(true));
+ */
+ 
+ require __DIR__.'/../vendor/autoload.php';
++
++/*
++|--------------------------------------------------------------------------
++| Include The Compiled Class File
++|--------------------------------------------------------------------------
++|
++| To dramatically increase your application's performance, you may use a
++| compiled class file which contains all of the classes commonly used
++| by a request. The Artisan "optimize" is used to create this file.
++|
++*/
++
++$compiledPath = __DIR__.'/cache/compiled.php';
++
++if (file_exists($compiledPath)) {
++    require $compiledPath;
++}
+diff --git a/LaravelDiffApp/composer.json b/LaravelDiffApp/composer.json
+index 2b1259d..e5f2117 100644
+--- a/LaravelDiffApp/composer.json
++++ b/LaravelDiffApp/composer.json
+@@ -12,7 +12,7 @@
+     "require-dev": {
+         "fzaninotto/faker": "~1.4",
+         "mockery/mockery": "0.9.*",
+-        "phpunit/phpunit": "~5.7"
++        "phpunit/phpunit": "~5.0"
+     },
+     "autoload": {
+         "classmap": [
+diff --git a/LaravelDiffApp/config/mail.php b/LaravelDiffApp/config/mail.php
+index bb92224..68ed285 100644
+--- a/LaravelDiffApp/config/mail.php
++++ b/LaravelDiffApp/config/mail.php
+@@ -88,19 +88,6 @@ return [
+ 
+     'password' => env('MAIL_PASSWORD'),
+ 
+-    /*
+-    |--------------------------------------------------------------------------
+-    | Sendmail System Path
+-    |--------------------------------------------------------------------------
+-    |
+-    | When using the "sendmail" driver to send e-mails, we will need to know
+-    | the path to where Sendmail lives on this server. A default path has
+-    | been provided here, which will work well on most of your systems.
+-    |
+-    */
+-
+-    'sendmail' => '/usr/sbin/sendmail -bs',
+-
+     /*
+     |--------------------------------------------------------------------------
+     | Markdown Mail Settings
+diff --git a/LaravelDiffApp/package.json b/LaravelDiffApp/package.json
+index 5870fb7..220aff5 100644
+--- a/LaravelDiffApp/package.json
++++ b/LaravelDiffApp/package.json
+@@ -3,16 +3,15 @@
+   "scripts": {
+     "dev": "node node_modules/cross-env/bin/cross-env.js NODE_ENV=development node_modules/webpack/bin/webpack.js --progress --hide-modules --config=node_modules/laravel-mix/setup/webpack.config.js",
+     "watch": "node node_modules/cross-env/bin/cross-env.js NODE_ENV=development node_modules/webpack/bin/webpack.js --watch --progress --hide-modules --config=node_modules/laravel-mix/setup/webpack.config.js",
+-    "watch-poll": "node node_modules/cross-env/bin/cross-env.js NODE_ENV=development node_modules/webpack/bin/webpack.js --watch --watch-poll --progress --hide-modules --config=node_modules/laravel-mix/setup/webpack.config.js",
+     "hot": "node node_modules/cross-env/bin/cross-env.js NODE_ENV=development node_modules/webpack-dev-server/bin/webpack-dev-server.js --inline --hot --config=node_modules/laravel-mix/setup/webpack.config.js",
+     "production": "node node_modules/cross-env/bin/cross-env.js NODE_ENV=production node_modules/webpack/bin/webpack.js --progress --hide-modules --config=node_modules/laravel-mix/setup/webpack.config.js"
+   },
+   "devDependencies": {
+-    "axios": "^0.15.3",
++    "axios": "^0.15.2",
+     "bootstrap-sass": "^3.3.7",
+-    "jquery": "^3.1.1",
+-    "laravel-mix": "^0.8.1",
+-    "lodash": "^4.17.4",
+-    "vue": "^2.1.10"
++    "jquery": "^3.1.0",
++    "laravel-mix": "^0.5.0",
++    "lodash": "^4.16.2",
++    "vue": "^2.0.1"
+   }
+ }
+diff --git a/LaravelDiffApp/resources/assets/js/bootstrap.js b/LaravelDiffApp/resources/assets/js/bootstrap.js
+index e89ea5a..4e8b958 100644
+--- a/LaravelDiffApp/resources/assets/js/bootstrap.js
++++ b/LaravelDiffApp/resources/assets/js/bootstrap.js
+@@ -28,7 +28,6 @@ window.Vue = require('vue');
+ window.axios = require('axios');
+ 
+ window.axios.defaults.headers.common = {
+-    'X-CSRF-TOKEN': window.Laravel.csrfToken,
+     'X-Requested-With': 'XMLHttpRequest'
+ };
+ 
+diff --git a/LaravelDiffApp/resources/assets/sass/_variables.scss b/LaravelDiffApp/resources/assets/sass/_variables.scss
+index 53202ac..0a2bc73 100644
+--- a/LaravelDiffApp/resources/assets/sass/_variables.scss
++++ b/LaravelDiffApp/resources/assets/sass/_variables.scss
+@@ -17,7 +17,6 @@ $brand-warning: #cbb956;
+ $brand-danger: #bf5329;
+ 
+ // Typography
+-$icon-font-path: "~bootstrap-sass/assets/fonts/bootstrap/";
+ $font-family-sans-serif: "Raleway", sans-serif;
+ $font-size-base: 14px;
+ $line-height-base: 1.6;
+diff --git a/LaravelDiffApp/resources/lang/en/validation.php b/LaravelDiffApp/resources/lang/en/validation.php
+index 2a5c743..9608bc2 100644
+--- a/LaravelDiffApp/resources/lang/en/validation.php
++++ b/LaravelDiffApp/resources/lang/en/validation.php
+@@ -41,7 +41,7 @@ return [
+     'email'                => 'The :attribute must be a valid email address.',
+     'exists'               => 'The selected :attribute is invalid.',
+     'file'                 => 'The :attribute must be a file.',
+-    'filled'               => 'The :attribute field must have a value.',
++    'filled'               => 'The :attribute field is required.',
+     'image'                => 'The :attribute must be an image.',
+     'in'                   => 'The selected :attribute is invalid.',
+     'in_array'             => 'The :attribute field does not exist in :other.',
+diff --git a/LaravelDiffApp/resources/views/welcome.blade.php b/LaravelDiffApp/resources/views/welcome.blade.php
+index 44b7e72..d676037 100644
+--- a/LaravelDiffApp/resources/views/welcome.blade.php
++++ b/LaravelDiffApp/resources/views/welcome.blade.php
+@@ -1,5 +1,5 @@
+ <!DOCTYPE html>
+-<html lang="{{ config('app.locale') }}">
++<html lang="en">
+     <head>
+         <meta charset="utf-8">
+         <meta http-equiv="X-UA-Compatible" content="IE=edge">
+diff --git a/LaravelDiffApp/storage/framework/testing/.gitignore b/LaravelDiffApp/storage/framework/testing/.gitignore
+deleted file mode 100644
+index d6b7ef3..0000000
+--- a/LaravelDiffApp/storage/framework/testing/.gitignore
++++ /dev/null
+@@ -1,2 +0,0 @@
+-*
+-!.gitignore

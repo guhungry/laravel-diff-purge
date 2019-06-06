@@ -1,0 +1,59 @@
+diff --git a/LaravelDiffApp/app/Exceptions/Handler.php b/LaravelDiffApp/app/Exceptions/Handler.php
+index a747e31..21c9784 100644
+--- a/LaravelDiffApp/app/Exceptions/Handler.php
++++ b/LaravelDiffApp/app/Exceptions/Handler.php
+@@ -60,6 +60,6 @@ class Handler extends ExceptionHandler
+             return response()->json(['error' => 'Unauthenticated.'], 401);
+         }
+ 
+-        return redirect()->guest(route('login'));
++        return redirect()->guest('login');
+     }
+ }
+diff --git a/LaravelDiffApp/package.json b/LaravelDiffApp/package.json
+index 5870fb7..f823aa4 100644
+--- a/LaravelDiffApp/package.json
++++ b/LaravelDiffApp/package.json
+@@ -3,16 +3,15 @@
+   "scripts": {
+     "dev": "node node_modules/cross-env/bin/cross-env.js NODE_ENV=development node_modules/webpack/bin/webpack.js --progress --hide-modules --config=node_modules/laravel-mix/setup/webpack.config.js",
+     "watch": "node node_modules/cross-env/bin/cross-env.js NODE_ENV=development node_modules/webpack/bin/webpack.js --watch --progress --hide-modules --config=node_modules/laravel-mix/setup/webpack.config.js",
+-    "watch-poll": "node node_modules/cross-env/bin/cross-env.js NODE_ENV=development node_modules/webpack/bin/webpack.js --watch --watch-poll --progress --hide-modules --config=node_modules/laravel-mix/setup/webpack.config.js",
+     "hot": "node node_modules/cross-env/bin/cross-env.js NODE_ENV=development node_modules/webpack-dev-server/bin/webpack-dev-server.js --inline --hot --config=node_modules/laravel-mix/setup/webpack.config.js",
+     "production": "node node_modules/cross-env/bin/cross-env.js NODE_ENV=production node_modules/webpack/bin/webpack.js --progress --hide-modules --config=node_modules/laravel-mix/setup/webpack.config.js"
+   },
+   "devDependencies": {
+-    "axios": "^0.15.3",
++    "axios": "^0.15.2",
+     "bootstrap-sass": "^3.3.7",
+-    "jquery": "^3.1.1",
+-    "laravel-mix": "^0.8.1",
+-    "lodash": "^4.17.4",
+-    "vue": "^2.1.10"
++    "jquery": "^3.1.0",
++    "laravel-mix": "^0.6.0",
++    "lodash": "^4.16.2",
++    "vue": "^2.0.1"
+   }
+ }
+diff --git a/LaravelDiffApp/resources/lang/en/validation.php b/LaravelDiffApp/resources/lang/en/validation.php
+index 2a5c743..9608bc2 100644
+--- a/LaravelDiffApp/resources/lang/en/validation.php
++++ b/LaravelDiffApp/resources/lang/en/validation.php
+@@ -41,7 +41,7 @@ return [
+     'email'                => 'The :attribute must be a valid email address.',
+     'exists'               => 'The selected :attribute is invalid.',
+     'file'                 => 'The :attribute must be a file.',
+-    'filled'               => 'The :attribute field must have a value.',
++    'filled'               => 'The :attribute field is required.',
+     'image'                => 'The :attribute must be an image.',
+     'in'                   => 'The selected :attribute is invalid.',
+     'in_array'             => 'The :attribute field does not exist in :other.',
+diff --git a/LaravelDiffApp/storage/framework/testing/.gitignore b/LaravelDiffApp/storage/framework/testing/.gitignore
+deleted file mode 100644
+index d6b7ef3..0000000
+--- a/LaravelDiffApp/storage/framework/testing/.gitignore
++++ /dev/null
+@@ -1,2 +0,0 @@
+-*
+-!.gitignore

@@ -1,0 +1,16 @@
+# project
+LaravelDiffApp/
+
+
+# macOS
+.DS_Store
+
+# composer
+vendor/
+
+# node
+node_modules/
+
+# git worktree
+wt-app
+wt-diffs

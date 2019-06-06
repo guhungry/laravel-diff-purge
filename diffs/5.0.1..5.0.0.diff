@@ -1,0 +1,20 @@
+diff --git a/LaravelDiffApp/app/Exceptions/Handler.php b/LaravelDiffApp/app/Exceptions/Handler.php
+index c7a75d3..ca5215b 100644
+--- a/LaravelDiffApp/app/Exceptions/Handler.php
++++ b/LaravelDiffApp/app/Exceptions/Handler.php
+@@ -36,7 +36,14 @@ class Handler extends ExceptionHandler {
+ 	 */
+ 	public function render($request, Exception $e)
+ 	{
+-		return parent::render($request, $e);
++		if ($this->isHttpException($e))
++		{
++			return $this->renderHttpException($e);
++		}
++		else
++		{
++			return parent::render($request, $e);
++		}
+ 	}
+ 
+ }

@@ -1,0 +1,145 @@
+diff --git a/LaravelDiffApp/.env.example b/LaravelDiffApp/.env.example
+index 55b5223..251aeb9 100644
+--- a/LaravelDiffApp/.env.example
++++ b/LaravelDiffApp/.env.example
+@@ -21,7 +21,7 @@ REDIS_PASSWORD=null
+ REDIS_PORT=6379
+ 
+ MAIL_DRIVER=smtp
+-MAIL_HOST=smtp.mailtrap.io
++MAIL_HOST=mailtrap.io
+ MAIL_PORT=2525
+ MAIL_USERNAME=null
+ MAIL_PASSWORD=null
+diff --git a/LaravelDiffApp/app/Exceptions/Handler.php b/LaravelDiffApp/app/Exceptions/Handler.php
+index a747e31..21c9784 100644
+--- a/LaravelDiffApp/app/Exceptions/Handler.php
++++ b/LaravelDiffApp/app/Exceptions/Handler.php
+@@ -60,6 +60,6 @@ class Handler extends ExceptionHandler
+             return response()->json(['error' => 'Unauthenticated.'], 401);
+         }
+ 
+-        return redirect()->guest(route('login'));
++        return redirect()->guest('login');
+     }
+ }
+diff --git a/LaravelDiffApp/config/database.php b/LaravelDiffApp/config/database.php
+index a196943..df36b2d 100644
+--- a/LaravelDiffApp/config/database.php
++++ b/LaravelDiffApp/config/database.php
+@@ -46,7 +46,6 @@ return [
+             'database' => env('DB_DATABASE', 'forge'),
+             'username' => env('DB_USERNAME', 'forge'),
+             'password' => env('DB_PASSWORD', ''),
+-            'unix_socket' => env('DB_SOCKET', ''),
+             'charset' => 'utf8mb4',
+             'collation' => 'utf8mb4_unicode_ci',
+             'prefix' => '',
+diff --git a/LaravelDiffApp/config/view.php b/LaravelDiffApp/config/view.php
+index 2acfd9c..e193ab6 100644
+--- a/LaravelDiffApp/config/view.php
++++ b/LaravelDiffApp/config/view.php
+@@ -14,7 +14,7 @@ return [
+     */
+ 
+     'paths' => [
+-        resource_path('views'),
++        realpath(base_path('resources/views')),
+     ],
+ 
+     /*
+diff --git a/LaravelDiffApp/database/migrations/2014_10_12_100000_create_password_resets_table.php b/LaravelDiffApp/database/migrations/2014_10_12_100000_create_password_resets_table.php
+index 0d5cb84..1eefa40 100644
+--- a/LaravelDiffApp/database/migrations/2014_10_12_100000_create_password_resets_table.php
++++ b/LaravelDiffApp/database/migrations/2014_10_12_100000_create_password_resets_table.php
+@@ -15,7 +15,7 @@ class CreatePasswordResetsTable extends Migration
+     {
+         Schema::create('password_resets', function (Blueprint $table) {
+             $table->string('email')->index();
+-            $table->string('token');
++            $table->string('token')->index();
+             $table->timestamp('created_at')->nullable();
+         });
+     }
+diff --git a/LaravelDiffApp/package.json b/LaravelDiffApp/package.json
+index c896e51..f823aa4 100644
+--- a/LaravelDiffApp/package.json
++++ b/LaravelDiffApp/package.json
+@@ -1,19 +1,17 @@
+ {
+   "private": true,
+   "scripts": {
+-    "dev": "cross-env NODE_ENV=development node_modules/webpack/bin/webpack.js --progress --hide-modules --config=node_modules/laravel-mix/setup/webpack.config.js",
+-    "watch": "cross-env NODE_ENV=development node_modules/webpack/bin/webpack.js --watch --progress --hide-modules --config=node_modules/laravel-mix/setup/webpack.config.js",
+-    "watch-poll": "cross-env NODE_ENV=development node_modules/webpack/bin/webpack.js --watch --watch-poll --progress --hide-modules --config=node_modules/laravel-mix/setup/webpack.config.js",
+-    "hot": "cross-env NODE_ENV=development node_modules/webpack-dev-server/bin/webpack-dev-server.js --inline --hot --config=node_modules/laravel-mix/setup/webpack.config.js",
+-    "production": "cross-env NODE_ENV=production node_modules/webpack/bin/webpack.js --progress --hide-modules --config=node_modules/laravel-mix/setup/webpack.config.js"
++    "dev": "node node_modules/cross-env/bin/cross-env.js NODE_ENV=development node_modules/webpack/bin/webpack.js --progress --hide-modules --config=node_modules/laravel-mix/setup/webpack.config.js",
++    "watch": "node node_modules/cross-env/bin/cross-env.js NODE_ENV=development node_modules/webpack/bin/webpack.js --watch --progress --hide-modules --config=node_modules/laravel-mix/setup/webpack.config.js",
++    "hot": "node node_modules/cross-env/bin/cross-env.js NODE_ENV=development node_modules/webpack-dev-server/bin/webpack-dev-server.js --inline --hot --config=node_modules/laravel-mix/setup/webpack.config.js",
++    "production": "node node_modules/cross-env/bin/cross-env.js NODE_ENV=production node_modules/webpack/bin/webpack.js --progress --hide-modules --config=node_modules/laravel-mix/setup/webpack.config.js"
+   },
+   "devDependencies": {
+-    "axios": "^0.15.3",
++    "axios": "^0.15.2",
+     "bootstrap-sass": "^3.3.7",
+-    "cross-env": "^3.2.3",
+-    "jquery": "^3.1.1",
+-    "laravel-mix": "^0.8.3",
+-    "lodash": "^4.17.4",
+-    "vue": "^2.1.10"
++    "jquery": "^3.1.0",
++    "laravel-mix": "^0.6.0",
++    "lodash": "^4.16.2",
++    "vue": "^2.0.1"
+   }
+ }
+diff --git a/LaravelDiffApp/public/index.php b/LaravelDiffApp/public/index.php
+index 1e1d775..716731f 100644
+--- a/LaravelDiffApp/public/index.php
++++ b/LaravelDiffApp/public/index.php
+@@ -15,7 +15,7 @@
+ | Composer provides a convenient, automatically generated class loader for
+ | our application. We just need to utilize it! We'll simply require it
+ | into the script here so that we don't have to worry about manual
+-| loading any of our classes later on. It feels great to relax.
++| loading any of our classes later on. It feels nice to relax.
+ |
+ */
+ 
+diff --git a/LaravelDiffApp/resources/assets/js/bootstrap.js b/LaravelDiffApp/resources/assets/js/bootstrap.js
+index 36ec688..e89ea5a 100644
+--- a/LaravelDiffApp/resources/assets/js/bootstrap.js
++++ b/LaravelDiffApp/resources/assets/js/bootstrap.js
+@@ -38,9 +38,7 @@ window.axios.defaults.headers.common = {
+  * allows your team to easily build robust real-time web applications.
+  */
+ 
+-// import Echo from 'laravel-echo'
+-
+-// window.Pusher = require('pusher-js');
++// import Echo from "laravel-echo"
+ 
+ // window.Echo = new Echo({
+ //     broadcaster: 'pusher',
+diff --git a/LaravelDiffApp/resources/lang/en/validation.php b/LaravelDiffApp/resources/lang/en/validation.php
+index 2a5c743..9608bc2 100644
+--- a/LaravelDiffApp/resources/lang/en/validation.php
++++ b/LaravelDiffApp/resources/lang/en/validation.php
+@@ -41,7 +41,7 @@ return [
+     'email'                => 'The :attribute must be a valid email address.',
+     'exists'               => 'The selected :attribute is invalid.',
+     'file'                 => 'The :attribute must be a file.',
+-    'filled'               => 'The :attribute field must have a value.',
++    'filled'               => 'The :attribute field is required.',
+     'image'                => 'The :attribute must be an image.',
+     'in'                   => 'The selected :attribute is invalid.',
+     'in_array'             => 'The :attribute field does not exist in :other.',
+diff --git a/LaravelDiffApp/storage/framework/testing/.gitignore b/LaravelDiffApp/storage/framework/testing/.gitignore
+deleted file mode 100644
+index d6b7ef3..0000000
+--- a/LaravelDiffApp/storage/framework/testing/.gitignore
++++ /dev/null
+@@ -1,2 +0,0 @@
+-*
+-!.gitignore

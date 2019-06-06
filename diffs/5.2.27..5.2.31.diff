@@ -1,0 +1,94 @@
+diff --git a/LaravelDiffApp/.gitattributes b/LaravelDiffApp/.gitattributes
+index 95883de..a8763f8 100644
+--- a/LaravelDiffApp/.gitattributes
++++ b/LaravelDiffApp/.gitattributes
+@@ -1,3 +1,3 @@
+ * text=auto
+ *.css linguist-vendored
+-*.less linguist-vendored
++*.scss linguist-vendored
+diff --git a/LaravelDiffApp/app/Http/Controllers/Controller.php b/LaravelDiffApp/app/Http/Controllers/Controller.php
+index 03e02a2..d492e0b 100644
+--- a/LaravelDiffApp/app/Http/Controllers/Controller.php
++++ b/LaravelDiffApp/app/Http/Controllers/Controller.php
+@@ -6,8 +6,9 @@ use Illuminate\Foundation\Bus\DispatchesJobs;
+ use Illuminate\Routing\Controller as BaseController;
+ use Illuminate\Foundation\Validation\ValidatesRequests;
+ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
++use Illuminate\Foundation\Auth\Access\AuthorizesResources;
+ 
+ class Controller extends BaseController
+ {
+-    use AuthorizesRequests, DispatchesJobs, ValidatesRequests;
++    use AuthorizesRequests, AuthorizesResources, DispatchesJobs, ValidatesRequests;
+ }
+diff --git a/LaravelDiffApp/app/Http/Kernel.php b/LaravelDiffApp/app/Http/Kernel.php
+index f0d8083..bffcfd9 100644
+--- a/LaravelDiffApp/app/Http/Kernel.php
++++ b/LaravelDiffApp/app/Http/Kernel.php
+@@ -46,6 +46,7 @@ class Kernel extends HttpKernel
+     protected $routeMiddleware = [
+         'auth' => \App\Http\Middleware\Authenticate::class,
+         'auth.basic' => \Illuminate\Auth\Middleware\AuthenticateWithBasicAuth::class,
++        'can' => \Illuminate\Foundation\Http\Middleware\Authorize::class,
+         'guest' => \App\Http\Middleware\RedirectIfAuthenticated::class,
+         'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
+     ];
+diff --git a/LaravelDiffApp/config/queue.php b/LaravelDiffApp/config/queue.php
+index a2f3888..d0f732a 100644
+--- a/LaravelDiffApp/config/queue.php
++++ b/LaravelDiffApp/config/queue.php
+@@ -11,8 +11,7 @@ return [
+     | API, giving you convenient access to each back-end using the same
+     | syntax for each one. Here you may set the default queue driver.
+     |
+-    | Supported: "null", "sync", "database", "beanstalkd",
+-    |            "sqs", "redis"
++    | Supported: "null", "sync", "database", "beanstalkd", "sqs", "redis"
+     |
+     */
+ 
+diff --git a/LaravelDiffApp/package.json b/LaravelDiffApp/package.json
+index 460ee90..c4a056b 100644
+--- a/LaravelDiffApp/package.json
++++ b/LaravelDiffApp/package.json
+@@ -1,10 +1,12 @@
+ {
+   "private": true,
+-  "devDependencies": {
+-    "gulp": "^3.8.8"
++  "scripts": {
++    "prod": "gulp --production",
++    "dev": "gulp watch"
+   },
+-  "dependencies": {
+-    "laravel-elixir": "^4.0.0",
++  "devDependencies": {
++    "gulp": "^3.9.1",
++    "laravel-elixir": "^5.0.0",
+     "bootstrap-sass": "^3.0.0"
+   }
+ }
+diff --git a/LaravelDiffApp/phpunit.xml b/LaravelDiffApp/phpunit.xml
+index cc0841c..3e884d1 100644
+--- a/LaravelDiffApp/phpunit.xml
++++ b/LaravelDiffApp/phpunit.xml
+@@ -10,12 +10,15 @@
+          stopOnFailure="false">
+     <testsuites>
+         <testsuite name="Application Test Suite">
+-            <directory>./tests/</directory>
++            <directory suffix="Test.php">./tests</directory>
+         </testsuite>
+     </testsuites>
+     <filter>
+-        <whitelist>
+-            <directory suffix=".php">app/</directory>
++        <whitelist processUncoveredFilesFromWhitelist="true">
++            <directory suffix=".php">./app</directory>
++            <exclude>
++                <file>./app/Http/routes.php</file>
++            </exclude>
+         </whitelist>
+     </filter>
+     <php>

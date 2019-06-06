@@ -1,0 +1,42 @@
+diff --git a/LaravelDiffApp/.gitattributes b/LaravelDiffApp/.gitattributes
+index 95883de..a8763f8 100644
+--- a/LaravelDiffApp/.gitattributes
++++ b/LaravelDiffApp/.gitattributes
+@@ -1,3 +1,3 @@
+ * text=auto
+ *.css linguist-vendored
+-*.less linguist-vendored
++*.scss linguist-vendored
+diff --git a/LaravelDiffApp/config/queue.php b/LaravelDiffApp/config/queue.php
+index a2f3888..d0f732a 100644
+--- a/LaravelDiffApp/config/queue.php
++++ b/LaravelDiffApp/config/queue.php
+@@ -11,8 +11,7 @@ return [
+     | API, giving you convenient access to each back-end using the same
+     | syntax for each one. Here you may set the default queue driver.
+     |
+-    | Supported: "null", "sync", "database", "beanstalkd",
+-    |            "sqs", "redis"
++    | Supported: "null", "sync", "database", "beanstalkd", "sqs", "redis"
+     |
+     */
+ 
+diff --git a/LaravelDiffApp/package.json b/LaravelDiffApp/package.json
+index b8363c2..c4a056b 100644
+--- a/LaravelDiffApp/package.json
++++ b/LaravelDiffApp/package.json
+@@ -1,9 +1,11 @@
+ {
+   "private": true,
+-  "devDependencies": {
+-    "gulp": "^3.9.1"
++  "scripts": {
++    "prod": "gulp --production",
++    "dev": "gulp watch"
+   },
+-  "dependencies": {
++  "devDependencies": {
++    "gulp": "^3.9.1",
+     "laravel-elixir": "^5.0.0",
+     "bootstrap-sass": "^3.0.0"
+   }

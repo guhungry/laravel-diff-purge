@@ -1,0 +1,258 @@
+diff --git a/LaravelDiffApp/.env.example b/LaravelDiffApp/.env.example
+index 86aab15..9a9d0dc 100644
+--- a/LaravelDiffApp/.env.example
++++ b/LaravelDiffApp/.env.example
+@@ -3,6 +3,7 @@ APP_DEBUG=true
+ APP_KEY=SomeRandomString
+ APP_URL=http://localhost
+ 
++DB_CONNECTION=mysql
+ DB_HOST=127.0.0.1
+ DB_PORT=3306
+ DB_DATABASE=homestead
+diff --git a/LaravelDiffApp/.gitattributes b/LaravelDiffApp/.gitattributes
+index 95883de..a8763f8 100644
+--- a/LaravelDiffApp/.gitattributes
++++ b/LaravelDiffApp/.gitattributes
+@@ -1,3 +1,3 @@
+ * text=auto
+ *.css linguist-vendored
+-*.less linguist-vendored
++*.scss linguist-vendored
+diff --git a/LaravelDiffApp/app/Http/Controllers/Controller.php b/LaravelDiffApp/app/Http/Controllers/Controller.php
+index 03e02a2..d492e0b 100644
+--- a/LaravelDiffApp/app/Http/Controllers/Controller.php
++++ b/LaravelDiffApp/app/Http/Controllers/Controller.php
+@@ -6,8 +6,9 @@ use Illuminate\Foundation\Bus\DispatchesJobs;
+ use Illuminate\Routing\Controller as BaseController;
+ use Illuminate\Foundation\Validation\ValidatesRequests;
+ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
++use Illuminate\Foundation\Auth\Access\AuthorizesResources;
+ 
+ class Controller extends BaseController
+ {
+-    use AuthorizesRequests, DispatchesJobs, ValidatesRequests;
++    use AuthorizesRequests, AuthorizesResources, DispatchesJobs, ValidatesRequests;
+ }
+diff --git a/LaravelDiffApp/app/Http/Kernel.php b/LaravelDiffApp/app/Http/Kernel.php
+index f0d8083..bffcfd9 100644
+--- a/LaravelDiffApp/app/Http/Kernel.php
++++ b/LaravelDiffApp/app/Http/Kernel.php
+@@ -46,6 +46,7 @@ class Kernel extends HttpKernel
+     protected $routeMiddleware = [
+         'auth' => \App\Http\Middleware\Authenticate::class,
+         'auth.basic' => \Illuminate\Auth\Middleware\AuthenticateWithBasicAuth::class,
++        'can' => \Illuminate\Foundation\Http\Middleware\Authorize::class,
+         'guest' => \App\Http\Middleware\RedirectIfAuthenticated::class,
+         'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
+     ];
+diff --git a/LaravelDiffApp/app/Http/routes.php b/LaravelDiffApp/app/Http/routes.php
+index a7c5159..1ad3549 100644
+--- a/LaravelDiffApp/app/Http/routes.php
++++ b/LaravelDiffApp/app/Http/routes.php
+@@ -2,10 +2,10 @@
+ 
+ /*
+ |--------------------------------------------------------------------------
+-| Routes File
++| Application Routes
+ |--------------------------------------------------------------------------
+ |
+-| Here is where you will register all of the routes in an application.
++| Here is where you can register all of the routes for an application.
+ | It's a breeze. Simply tell Laravel the URIs it should respond to
+ | and give it the controller to call when that URI is requested.
+ |
+@@ -14,18 +14,3 @@
+ Route::get('/', function () {
+     return view('welcome');
+ });
+-
+-/*
+-|--------------------------------------------------------------------------
+-| Application Routes
+-|--------------------------------------------------------------------------
+-|
+-| This route group applies the "web" middleware group to every route
+-| it contains. The "web" middleware group is defined in your HTTP
+-| kernel and includes session state, CSRF protection, and more.
+-|
+-*/
+-
+-Route::group(['middleware' => ['web']], function () {
+-    //
+-});
+diff --git a/LaravelDiffApp/app/Providers/RouteServiceProvider.php b/LaravelDiffApp/app/Providers/RouteServiceProvider.php
+index d50b1c0..bde0881 100644
+--- a/LaravelDiffApp/app/Providers/RouteServiceProvider.php
++++ b/LaravelDiffApp/app/Providers/RouteServiceProvider.php
+@@ -8,7 +8,7 @@ use Illuminate\Foundation\Support\Providers\RouteServiceProvider as ServiceProvi
+ class RouteServiceProvider extends ServiceProvider
+ {
+     /**
+-     * This namespace is applied to the controller routes in your routes file.
++     * This namespace is applied to your controller routes.
+      *
+      * In addition, it is set as the URL generator's root namespace.
+      *
+@@ -37,7 +37,24 @@ class RouteServiceProvider extends ServiceProvider
+      */
+     public function map(Router $router)
+     {
+-        $router->group(['namespace' => $this->namespace], function ($router) {
++        $this->mapWebRoutes($router);
++
++        //
++    }
++
++    /**
++     * Define the "web" routes for the application.
++     *
++     * These routes all receive session state, CSRF protection, etc.
++     *
++     * @param  \Illuminate\Routing\Router  $router
++     * @return void
++     */
++    protected function mapWebRoutes(Router $router)
++    {
++        $router->group([
++            'namespace' => $this->namespace, 'middleware' => 'web',
++        ], function ($router) {
+             require app_path('Http/routes.php');
+         });
+     }
+diff --git a/LaravelDiffApp/app/User.php b/LaravelDiffApp/app/User.php
+index ef6fe91..75741ae 100644
+--- a/LaravelDiffApp/app/User.php
++++ b/LaravelDiffApp/app/User.php
+@@ -16,7 +16,7 @@ class User extends Authenticatable
+     ];
+ 
+     /**
+-     * The attributes excluded from the model's JSON form.
++     * The attributes that should be hidden for arrays.
+      *
+      * @var array
+      */
+diff --git a/LaravelDiffApp/composer.json b/LaravelDiffApp/composer.json
+index f516628..4943e17 100644
+--- a/LaravelDiffApp/composer.json
++++ b/LaravelDiffApp/composer.json
+@@ -36,11 +36,11 @@
+             "php artisan key:generate"
+         ],
+         "post-install-cmd": [
+-            "php artisan clear-compiled",
++            "Illuminate\\Foundation\\ComposerScripts::postInstall",
+             "php artisan optimize"
+         ],
+         "post-update-cmd": [
+-            "php artisan clear-compiled",
++            "Illuminate\\Foundation\\ComposerScripts::postUpdate",
+             "php artisan optimize"
+         ]
+     },
+diff --git a/LaravelDiffApp/config/database.php b/LaravelDiffApp/config/database.php
+index def1e56..8451a62 100644
+--- a/LaravelDiffApp/config/database.php
++++ b/LaravelDiffApp/config/database.php
+@@ -48,7 +48,7 @@ return [
+ 
+         'sqlite' => [
+             'driver' => 'sqlite',
+-            'database' => database_path('database.sqlite'),
++            'database' => env('DB_DATABASE', database_path('database.sqlite')),
+             'prefix' => '',
+         ],
+ 
+diff --git a/LaravelDiffApp/config/queue.php b/LaravelDiffApp/config/queue.php
+index a2f3888..d0f732a 100644
+--- a/LaravelDiffApp/config/queue.php
++++ b/LaravelDiffApp/config/queue.php
+@@ -11,8 +11,7 @@ return [
+     | API, giving you convenient access to each back-end using the same
+     | syntax for each one. Here you may set the default queue driver.
+     |
+-    | Supported: "null", "sync", "database", "beanstalkd",
+-    |            "sqs", "redis"
++    | Supported: "null", "sync", "database", "beanstalkd", "sqs", "redis"
+     |
+     */
+ 
+diff --git a/LaravelDiffApp/config/session.php b/LaravelDiffApp/config/session.php
+index f1b0042..b501055 100644
+--- a/LaravelDiffApp/config/session.php
++++ b/LaravelDiffApp/config/session.php
+@@ -150,4 +150,17 @@ return [
+ 
+     'secure' => false,
+ 
++    /*
++    |--------------------------------------------------------------------------
++    | HTTP Access Only
++    |--------------------------------------------------------------------------
++    |
++    | Setting this value to true will prevent JavaScript from accessing the
++    | value of the cookie and the cookie will only be accessible through
++    | the HTTP protocol. You are free to modify this option if needed.
++    |
++    */
++
++    'http_only' => true,
++
+ ];
+diff --git a/LaravelDiffApp/package.json b/LaravelDiffApp/package.json
+index 460ee90..c4a056b 100644
+--- a/LaravelDiffApp/package.json
++++ b/LaravelDiffApp/package.json
+@@ -1,10 +1,12 @@
+ {
+   "private": true,
+-  "devDependencies": {
+-    "gulp": "^3.8.8"
++  "scripts": {
++    "prod": "gulp --production",
++    "dev": "gulp watch"
+   },
+-  "dependencies": {
+-    "laravel-elixir": "^4.0.0",
++  "devDependencies": {
++    "gulp": "^3.9.1",
++    "laravel-elixir": "^5.0.0",
+     "bootstrap-sass": "^3.0.0"
+   }
+ }
+diff --git a/LaravelDiffApp/phpunit.xml b/LaravelDiffApp/phpunit.xml
+index cc0841c..3e884d1 100644
+--- a/LaravelDiffApp/phpunit.xml
++++ b/LaravelDiffApp/phpunit.xml
+@@ -10,12 +10,15 @@
+          stopOnFailure="false">
+     <testsuites>
+         <testsuite name="Application Test Suite">
+-            <directory>./tests/</directory>
++            <directory suffix="Test.php">./tests</directory>
+         </testsuite>
+     </testsuites>
+     <filter>
+-        <whitelist>
+-            <directory suffix=".php">app/</directory>
++        <whitelist processUncoveredFilesFromWhitelist="true">
++            <directory suffix=".php">./app</directory>
++            <exclude>
++                <file>./app/Http/routes.php</file>
++            </exclude>
+         </whitelist>
+     </filter>
+     <php>
+diff --git a/LaravelDiffApp/storage/framework/.gitignore b/LaravelDiffApp/storage/framework/.gitignore
+index 953edb7..b02b700 100644
+--- a/LaravelDiffApp/storage/framework/.gitignore
++++ b/LaravelDiffApp/storage/framework/.gitignore
+@@ -1,5 +1,6 @@
+ config.php
+ routes.php
++schedule-*
+ compiled.php
+ services.json
+ events.scanned.php

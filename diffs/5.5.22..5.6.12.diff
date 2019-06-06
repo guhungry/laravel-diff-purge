@@ -1,0 +1,591 @@
+diff --git a/LaravelDiffApp/.env.example b/LaravelDiffApp/.env.example
+index 91ba58f..ec44a12 100644
+--- a/LaravelDiffApp/.env.example
++++ b/LaravelDiffApp/.env.example
+@@ -2,9 +2,10 @@ APP_NAME=Laravel
+ APP_ENV=local
+ APP_KEY=
+ APP_DEBUG=true
+-APP_LOG_LEVEL=debug
+ APP_URL=http://localhost
+ 
++LOG_CHANNEL=stack
++
+ DB_CONNECTION=mysql
+ DB_HOST=127.0.0.1
+ DB_PORT=3306
+@@ -32,3 +33,7 @@ MAIL_ENCRYPTION=null
+ PUSHER_APP_ID=
+ PUSHER_APP_KEY=
+ PUSHER_APP_SECRET=
++PUSHER_APP_CLUSTER=mt1
++
++MIX_PUSHER_APP_KEY="${PUSHER_APP_KEY}"
++MIX_PUSHER_APP_CLUSTER="${PUSHER_APP_CLUSTER}"
+diff --git a/LaravelDiffApp/.gitignore b/LaravelDiffApp/.gitignore
+index b6a4b86..67c0aea 100644
+--- a/LaravelDiffApp/.gitignore
++++ b/LaravelDiffApp/.gitignore
+@@ -4,6 +4,7 @@
+ /storage/*.key
+ /vendor
+ /.idea
++/.vscode
+ /.vagrant
+ Homestead.json
+ Homestead.yaml
+diff --git a/LaravelDiffApp/app/Http/Controllers/Auth/RegisterController.php b/LaravelDiffApp/app/Http/Controllers/Auth/RegisterController.php
+index f77265a..e749c07 100644
+--- a/LaravelDiffApp/app/Http/Controllers/Auth/RegisterController.php
++++ b/LaravelDiffApp/app/Http/Controllers/Auth/RegisterController.php
+@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
+ 
+ use App\User;
+ use App\Http\Controllers\Controller;
++use Illuminate\Support\Facades\Hash;
+ use Illuminate\Support\Facades\Validator;
+ use Illuminate\Foundation\Auth\RegistersUsers;
+ 
+@@ -65,7 +66,7 @@ class RegisterController extends Controller
+         return User::create([
+             'name' => $data['name'],
+             'email' => $data['email'],
+-            'password' => bcrypt($data['password']),
++            'password' => Hash::make($data['password']),
+         ]);
+     }
+ }
+diff --git a/LaravelDiffApp/app/Http/Kernel.php b/LaravelDiffApp/app/Http/Kernel.php
+index 93bf68b..3439540 100644
+--- a/LaravelDiffApp/app/Http/Kernel.php
++++ b/LaravelDiffApp/app/Http/Kernel.php
+@@ -54,8 +54,10 @@ class Kernel extends HttpKernel
+         'auth' => \Illuminate\Auth\Middleware\Authenticate::class,
+         'auth.basic' => \Illuminate\Auth\Middleware\AuthenticateWithBasicAuth::class,
+         'bindings' => \Illuminate\Routing\Middleware\SubstituteBindings::class,
++        'cache.headers' => \Illuminate\Http\Middleware\SetCacheHeaders::class,
+         'can' => \Illuminate\Auth\Middleware\Authorize::class,
+         'guest' => \App\Http\Middleware\RedirectIfAuthenticated::class,
++        'signed' => \Illuminate\Routing\Middleware\ValidateSignature::class,
+         'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
+     ];
+ }
+diff --git a/LaravelDiffApp/app/Http/Middleware/TrustProxies.php b/LaravelDiffApp/app/Http/Middleware/TrustProxies.php
+index ef1c00d..3ce0214 100644
+--- a/LaravelDiffApp/app/Http/Middleware/TrustProxies.php
++++ b/LaravelDiffApp/app/Http/Middleware/TrustProxies.php
+@@ -15,15 +15,9 @@ class TrustProxies extends Middleware
+     protected $proxies;
+ 
+     /**
+-     * The current proxy header mappings.
++     * The headers that should be used to detect proxies.
+      *
+-     * @var array
++     * @var string
+      */
+-    protected $headers = [
+-        Request::HEADER_FORWARDED => 'FORWARDED',
+-        Request::HEADER_X_FORWARDED_FOR => 'X_FORWARDED_FOR',
+-        Request::HEADER_X_FORWARDED_HOST => 'X_FORWARDED_HOST',
+-        Request::HEADER_X_FORWARDED_PORT => 'X_FORWARDED_PORT',
+-        Request::HEADER_X_FORWARDED_PROTO => 'X_FORWARDED_PROTO',
+-    ];
++    protected $headers = Request::HEADER_X_FORWARDED_ALL;
+ }
+diff --git a/LaravelDiffApp/composer.json b/LaravelDiffApp/composer.json
+index dcb4cd3..65bf8b4 100644
+--- a/LaravelDiffApp/composer.json
++++ b/LaravelDiffApp/composer.json
+@@ -5,16 +5,17 @@
+     "license": "MIT",
+     "type": "project",
+     "require": {
+-        "php": ">=7.0.0",
+-        "fideloper/proxy": "~3.3",
+-        "laravel/framework": "5.5.*",
+-        "laravel/tinker": "~1.0"
++        "php": "^7.1.3",
++        "fideloper/proxy": "^4.0",
++        "laravel/framework": "5.6.*",
++        "laravel/tinker": "^1.0"
+     },
+     "require-dev": {
+-        "filp/whoops": "~2.0",
+-        "fzaninotto/faker": "~1.4",
+-        "mockery/mockery": "~1.0",
+-        "phpunit/phpunit": "~6.0"
++        "filp/whoops": "^2.0",
++        "fzaninotto/faker": "^1.4",
++        "mockery/mockery": "^1.0",
++        "nunomaduro/collision": "^2.0",
++        "phpunit/phpunit": "^7.0"
+     },
+     "autoload": {
+         "classmap": [
+@@ -52,5 +53,7 @@
+         "preferred-install": "dist",
+         "sort-packages": true,
+         "optimize-autoloader": true
+-    }
++    },
++    "minimum-stability": "dev",
++    "prefer-stable": true
+ }
+diff --git a/LaravelDiffApp/config/app.php b/LaravelDiffApp/config/app.php
+index 0e4ebed..b16e7f7 100644
+--- a/LaravelDiffApp/config/app.php
++++ b/LaravelDiffApp/config/app.php
+@@ -108,23 +108,6 @@ return [
+ 
+     'cipher' => 'AES-256-CBC',
+ 
+-    /*
+-    |--------------------------------------------------------------------------
+-    | Logging Configuration
+-    |--------------------------------------------------------------------------
+-    |
+-    | Here you may configure the log settings for your application. Out of
+-    | the box, Laravel uses the Monolog PHP logging library. This gives
+-    | you a variety of powerful log handlers / formatters to utilize.
+-    |
+-    | Available Settings: "single", "daily", "syslog", "errorlog"
+-    |
+-    */
+-
+-    'log' => env('APP_LOG', 'single'),
+-
+-    'log_level' => env('APP_LOG_LEVEL', 'debug'),
+-
+     /*
+     |--------------------------------------------------------------------------
+     | Autoloaded Service Providers
+diff --git a/LaravelDiffApp/config/broadcasting.php b/LaravelDiffApp/config/broadcasting.php
+index 5eecd2b..3ca45ea 100644
+--- a/LaravelDiffApp/config/broadcasting.php
++++ b/LaravelDiffApp/config/broadcasting.php
+@@ -36,7 +36,8 @@ return [
+             'secret' => env('PUSHER_APP_SECRET'),
+             'app_id' => env('PUSHER_APP_ID'),
+             'options' => [
+-                //
++                'cluster' => env('PUSHER_APP_CLUSTER'),
++                'encrypted' => true,
+             ],
+         ],
+ 
+diff --git a/LaravelDiffApp/config/filesystems.php b/LaravelDiffApp/config/filesystems.php
+index 9568e02..77fa5de 100644
+--- a/LaravelDiffApp/config/filesystems.php
++++ b/LaravelDiffApp/config/filesystems.php
+@@ -37,7 +37,7 @@ return [
+     | may even configure multiple disks of the same driver. Defaults have
+     | been setup for each driver as an example of the required options.
+     |
+-    | Supported Drivers: "local", "ftp", "s3", "rackspace"
++    | Supported Drivers: "local", "ftp", "sftp", "s3", "rackspace"
+     |
+     */
+ 
+@@ -61,6 +61,7 @@ return [
+             'secret' => env('AWS_SECRET_ACCESS_KEY'),
+             'region' => env('AWS_DEFAULT_REGION'),
+             'bucket' => env('AWS_BUCKET'),
++            'url' => env('AWS_URL'),
+         ],
+ 
+     ],
+diff --git a/LaravelDiffApp/config/hashing.php b/LaravelDiffApp/config/hashing.php
+new file mode 100644
+index 0000000..f929cf0
+--- /dev/null
++++ b/LaravelDiffApp/config/hashing.php
+@@ -0,0 +1,20 @@
++<?php
++
++return [
++
++    /*
++    |--------------------------------------------------------------------------
++    | Default Hash Driver
++    |--------------------------------------------------------------------------
++    |
++    | This option controls the default hash driver that will be used to hash
++    | passwords for your application. By default, the bcrypt algorithm is
++    | used; however, you remain free to modify this option if you wish.
++    |
++    | Supported: "bcrypt", "argon"
++    |
++    */
++
++    'driver' => 'bcrypt',
++
++];
+diff --git a/LaravelDiffApp/config/logging.php b/LaravelDiffApp/config/logging.php
+new file mode 100644
+index 0000000..902efaf
+--- /dev/null
++++ b/LaravelDiffApp/config/logging.php
+@@ -0,0 +1,70 @@
++<?php
++
++return [
++
++    /*
++    |--------------------------------------------------------------------------
++    | Default Log Channel
++    |--------------------------------------------------------------------------
++    |
++    | This option defines the default log channel that gets used when writing
++    | messages to the logs. The name specified in this option should match
++    | one of the channels defined in the "channels" configuration array.
++    |
++    */
++
++    'default' => env('LOG_CHANNEL', 'stack'),
++
++    /*
++    |--------------------------------------------------------------------------
++    | Log Channels
++    |--------------------------------------------------------------------------
++    |
++    | Here you may configure the log channels for your application. Out of
++    | the box, Laravel uses the Monolog PHP logging library. This gives
++    | you a variety of powerful log handlers / formatters to utilize.
++    |
++    | Available Drivers: "single", "daily", "slack", "syslog",
++    |                    "errorlog", "custom", "stack"
++    |
++    */
++
++    'channels' => [
++        'stack' => [
++            'driver' => 'stack',
++            'channels' => ['single'],
++        ],
++
++        'single' => [
++            'driver' => 'single',
++            'path' => storage_path('logs/laravel.log'),
++            'level' => 'debug',
++        ],
++
++        'daily' => [
++            'driver' => 'daily',
++            'path' => storage_path('logs/laravel.log'),
++            'level' => 'debug',
++            'days' => 7,
++        ],
++
++        'slack' => [
++            'driver' => 'slack',
++            'url' => env('LOG_SLACK_WEBHOOK_URL'),
++            'username' => 'Laravel Log',
++            'emoji' => ':boom:',
++            'level' => 'critical',
++        ],
++
++        'syslog' => [
++            'driver' => 'syslog',
++            'level' => 'debug',
++        ],
++
++        'errorlog' => [
++            'driver' => 'errorlog',
++            'level' => 'debug',
++        ],
++    ],
++
++];
+diff --git a/LaravelDiffApp/config/queue.php b/LaravelDiffApp/config/queue.php
+index 4d83ebd..391304f 100644
+--- a/LaravelDiffApp/config/queue.php
++++ b/LaravelDiffApp/config/queue.php
+@@ -4,14 +4,12 @@ return [
+ 
+     /*
+     |--------------------------------------------------------------------------
+-    | Default Queue Driver
++    | Default Queue Connection Name
+     |--------------------------------------------------------------------------
+     |
+     | Laravel's queue API supports an assortment of back-ends via a single
+     | API, giving you convenient access to each back-end using the same
+-    | syntax for each one. Here you may set the default queue driver.
+-    |
+-    | Supported: "sync", "database", "beanstalkd", "sqs", "redis", "null"
++    | syntax for every one. Here you may define a default connection.
+     |
+     */
+ 
+@@ -26,6 +24,8 @@ return [
+     | is used by your application. A default configuration has been added
+     | for each back-end shipped with Laravel. You are free to add more.
+     |
++    | Drivers: "sync", "database", "beanstalkd", "sqs", "redis", "null"
++    |
+     */
+ 
+     'connections' => [
+@@ -50,11 +50,11 @@ return [
+ 
+         'sqs' => [
+             'driver' => 'sqs',
+-            'key' => 'your-public-key',
+-            'secret' => 'your-secret-key',
+-            'prefix' => 'https://sqs.us-east-1.amazonaws.com/your-account-id',
+-            'queue' => 'your-queue-name',
+-            'region' => 'us-east-1',
++            'key' => env('SQS_KEY', 'your-public-key'),
++            'secret' => env('SQS_SECRET', 'your-secret-key'),
++            'prefix' => env('SQS_PREFIX', 'https://sqs.us-east-1.amazonaws.com/your-account-id'),
++            'queue' => env('SQS_QUEUE', 'your-queue-name'),
++            'region' => env('SQS_REGION', 'us-east-1'),
+         ],
+ 
+         'redis' => [
+@@ -62,6 +62,7 @@ return [
+             'connection' => 'default',
+             'queue' => 'default',
+             'retry_after' => 90,
++            'block_for' => null,
+         ],
+ 
+     ],
+diff --git a/LaravelDiffApp/database/factories/UserFactory.php b/LaravelDiffApp/database/factories/UserFactory.php
+index 061d75a..facf233 100644
+--- a/LaravelDiffApp/database/factories/UserFactory.php
++++ b/LaravelDiffApp/database/factories/UserFactory.php
+@@ -14,12 +14,10 @@ use Faker\Generator as Faker;
+ */
+ 
+ $factory->define(App\User::class, function (Faker $faker) {
+-    static $password;
+-
+     return [
+         'name' => $faker->name,
+         'email' => $faker->unique()->safeEmail,
+-        'password' => $password ?: $password = bcrypt('secret'),
++        'password' => '$2y$10$TKh8H1.PfQx37YgCzwiKb.KjNyWgaHb9cbcoQgdIVFlYg7B77UdFm', // secret
+         'remember_token' => str_random(10),
+     ];
+ });
+diff --git a/LaravelDiffApp/package.json b/LaravelDiffApp/package.json
+index 7ceac0e..3de8d8d 100644
+--- a/LaravelDiffApp/package.json
++++ b/LaravelDiffApp/package.json
+@@ -10,11 +10,12 @@
+         "production": "cross-env NODE_ENV=production node_modules/webpack/bin/webpack.js --no-progress --hide-modules --config=node_modules/laravel-mix/setup/webpack.config.js"
+     },
+     "devDependencies": {
+-        "axios": "^0.17",
+-        "bootstrap-sass": "^3.3.7",
++        "axios": "^0.18",
++        "bootstrap": "^4.0.0",
++        "popper.js": "^1.12",
+         "cross-env": "^5.1",
+         "jquery": "^3.2",
+-        "laravel-mix": "^1.0",
++        "laravel-mix": "^2.0",
+         "lodash": "^4.17.4",
+         "vue": "^2.5.7"
+     }
+diff --git a/LaravelDiffApp/phpunit.xml b/LaravelDiffApp/phpunit.xml
+index bb9c4a7..9ee3e73 100644
+--- a/LaravelDiffApp/phpunit.xml
++++ b/LaravelDiffApp/phpunit.xml
+@@ -27,5 +27,6 @@
+         <env name="CACHE_DRIVER" value="array"/>
+         <env name="SESSION_DRIVER" value="array"/>
+         <env name="QUEUE_DRIVER" value="sync"/>
++        <env name="MAIL_DRIVER" value="array"/>
+     </php>
+ </phpunit>
+diff --git a/LaravelDiffApp/public/.htaccess b/LaravelDiffApp/public/.htaccess
+index 4df299c..b75525b 100644
+--- a/LaravelDiffApp/public/.htaccess
++++ b/LaravelDiffApp/public/.htaccess
+@@ -8,7 +8,7 @@
+     # Handle Authorization Header
+     RewriteCond %{HTTP:Authorization} .
+     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+-    
++
+     # Redirect Trailing Slashes If Not A Folder...
+     RewriteCond %{REQUEST_FILENAME} !-d
+     RewriteCond %{REQUEST_URI} (.+)/$
+diff --git a/LaravelDiffApp/readme.md b/LaravelDiffApp/readme.md
+index 1ae3d92..5e90f48 100644
+--- a/LaravelDiffApp/readme.md
++++ b/LaravelDiffApp/readme.md
+@@ -29,10 +29,11 @@ If you're not in the mood to read, [Laracasts](https://laracasts.com) contains o
+ 
+ ## Laravel Sponsors
+ 
+-We would like to extend our thanks to the following sponsors for helping fund on-going Laravel development. If you are interested in becoming a sponsor, please visit the Laravel [Patreon page](http://patreon.com/taylorotwell):
++We would like to extend our thanks to the following sponsors for helping fund on-going Laravel development. If you are interested in becoming a sponsor, please visit the Laravel [Patreon page](https://patreon.com/taylorotwell):
+ 
+ - **[Vehikl](https://vehikl.com/)**
+ - **[Tighten Co.](https://tighten.co)**
++- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
+ - **[British Software Development](https://www.britishsoftware.co)**
+ - [Fragrantica](https://www.fragrantica.com)
+ - [SOFTonSOFA](https://softonsofa.com/)
+@@ -47,7 +48,7 @@ We would like to extend our thanks to the following sponsors for helping fund on
+ 
+ ## Contributing
+ 
+-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](http://laravel.com/docs/contributions).
++Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+ 
+ ## Security Vulnerabilities
+ 
+@@ -55,4 +56,4 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
+ 
+ ## License
+ 
+-The Laravel framework is open-sourced software licensed under the [MIT license](http://opensource.org/licenses/MIT).
++The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+diff --git a/LaravelDiffApp/resources/assets/js/bootstrap.js b/LaravelDiffApp/resources/assets/js/bootstrap.js
+index 8e0f04e..fb0f1ed 100644
+--- a/LaravelDiffApp/resources/assets/js/bootstrap.js
++++ b/LaravelDiffApp/resources/assets/js/bootstrap.js
+@@ -1,5 +1,6 @@
+ 
+ window._ = require('lodash');
++window.Popper = require('popper.js').default;
+ 
+ /**
+  * We'll load jQuery and the Bootstrap jQuery plugin which provides support
+@@ -10,7 +11,7 @@ window._ = require('lodash');
+ try {
+     window.$ = window.jQuery = require('jquery');
+ 
+-    require('bootstrap-sass');
++    require('bootstrap');
+ } catch (e) {}
+ 
+ /**
+@@ -49,5 +50,7 @@ if (token) {
+ 
+ // window.Echo = new Echo({
+ //     broadcaster: 'pusher',
+-//     key: 'your-pusher-key'
++//     key: process.env.MIX_PUSHER_APP_KEY,
++//     cluster: process.env.MIX_PUSHER_APP_CLUSTER,
++//     encrypted: true
+ // });
+diff --git a/LaravelDiffApp/resources/assets/js/components/ExampleComponent.vue b/LaravelDiffApp/resources/assets/js/components/ExampleComponent.vue
+index 601e61c..2805329 100644
+--- a/LaravelDiffApp/resources/assets/js/components/ExampleComponent.vue
++++ b/LaravelDiffApp/resources/assets/js/components/ExampleComponent.vue
+@@ -1,12 +1,12 @@
+ <template>
+     <div class="container">
+-        <div class="row">
+-            <div class="col-md-8 col-md-offset-2">
+-                <div class="panel panel-default">
+-                    <div class="panel-heading">Example Component</div>
++        <div class="row justify-content-center">
++            <div class="col-md-8">
++                <div class="card card-default">
++                    <div class="card-header">Example Component</div>
+ 
+-                    <div class="panel-body">
+-                        I'm an example component!
++                    <div class="card-body">
++                        I'm an example component.
+                     </div>
+                 </div>
+             </div>
+diff --git a/LaravelDiffApp/resources/assets/sass/_variables.scss b/LaravelDiffApp/resources/assets/sass/_variables.scss
+index 53202ac..70ecfdb 100644
+--- a/LaravelDiffApp/resources/assets/sass/_variables.scss
++++ b/LaravelDiffApp/resources/assets/sass/_variables.scss
+@@ -2,37 +2,7 @@
+ // Body
+ $body-bg: #f5f8fa;
+ 
+-// Borders
+-$laravel-border-color: darken($body-bg, 10%);
+-$list-group-border: $laravel-border-color;
+-$navbar-default-border: $laravel-border-color;
+-$panel-default-border: $laravel-border-color;
+-$panel-inner-border: $laravel-border-color;
+-
+-// Brands
+-$brand-primary: #3097D1;
+-$brand-info: #8eb4cb;
+-$brand-success: #2ab27b;
+-$brand-warning: #cbb956;
+-$brand-danger: #bf5329;
+-
+ // Typography
+-$icon-font-path: "~bootstrap-sass/assets/fonts/bootstrap/";
+ $font-family-sans-serif: "Raleway", sans-serif;
+-$font-size-base: 14px;
++$font-size-base: 0.9rem;
+ $line-height-base: 1.6;
+-$text-color: #636b6f;
+-
+-// Navbar
+-$navbar-default-bg: #fff;
+-
+-// Buttons
+-$btn-default-color: $text-color;
+-
+-// Inputs
+-$input-border: lighten($text-color, 40%);
+-$input-border-focus: lighten($brand-primary, 25%);
+-$input-color-placeholder: lighten($text-color, 30%);
+-
+-// Panels
+-$panel-default-heading-bg: #fff;
+diff --git a/LaravelDiffApp/resources/assets/sass/app.scss b/LaravelDiffApp/resources/assets/sass/app.scss
+index 1bbc550..0077cb1 100644
+--- a/LaravelDiffApp/resources/assets/sass/app.scss
++++ b/LaravelDiffApp/resources/assets/sass/app.scss
+@@ -6,4 +6,9 @@
+ @import "variables";
+ 
+ // Bootstrap
+-@import "~bootstrap-sass/assets/stylesheets/bootstrap";
++@import '~bootstrap/scss/bootstrap';
++
++.navbar-laravel {
++  background-color: #fff;
++  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
++}
+diff --git a/LaravelDiffApp/resources/lang/en/validation.php b/LaravelDiffApp/resources/lang/en/validation.php
+index edc036d..77d2302 100644
+--- a/LaravelDiffApp/resources/lang/en/validation.php
++++ b/LaravelDiffApp/resources/lang/en/validation.php
+@@ -65,6 +65,7 @@ return [
+         'array'   => 'The :attribute must have at least :min items.',
+     ],
+     'not_in'               => 'The selected :attribute is invalid.',
++    'not_regex'            => 'The :attribute format is invalid.',
+     'numeric'              => 'The :attribute must be a number.',
+     'present'              => 'The :attribute field must be present.',
+     'regex'                => 'The :attribute format is invalid.',
+diff --git a/LaravelDiffApp/tests/CreatesApplication.php b/LaravelDiffApp/tests/CreatesApplication.php
+index 547152f..ff133fb 100644
+--- a/LaravelDiffApp/tests/CreatesApplication.php
++++ b/LaravelDiffApp/tests/CreatesApplication.php
+@@ -2,6 +2,7 @@
+ 
+ namespace Tests;
+ 
++use Illuminate\Support\Facades\Hash;
+ use Illuminate\Contracts\Console\Kernel;
+ 
+ trait CreatesApplication
+@@ -17,6 +18,8 @@ trait CreatesApplication
+ 
+         $app->make(Kernel::class)->bootstrap();
+ 
++        Hash::driver('bcrypt')->setRounds(4);
++
+         return $app;
+     }
+ }

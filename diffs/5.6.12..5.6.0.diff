@@ -1,0 +1,161 @@
+diff --git a/LaravelDiffApp/app/Http/Controllers/Auth/RegisterController.php b/LaravelDiffApp/app/Http/Controllers/Auth/RegisterController.php
+index e749c07..f77265a 100644
+--- a/LaravelDiffApp/app/Http/Controllers/Auth/RegisterController.php
++++ b/LaravelDiffApp/app/Http/Controllers/Auth/RegisterController.php
+@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Auth;
+ 
+ use App\User;
+ use App\Http\Controllers\Controller;
+-use Illuminate\Support\Facades\Hash;
+ use Illuminate\Support\Facades\Validator;
+ use Illuminate\Foundation\Auth\RegistersUsers;
+ 
+@@ -66,7 +65,7 @@ class RegisterController extends Controller
+         return User::create([
+             'name' => $data['name'],
+             'email' => $data['email'],
+-            'password' => Hash::make($data['password']),
++            'password' => bcrypt($data['password']),
+         ]);
+     }
+ }
+diff --git a/LaravelDiffApp/app/Http/Kernel.php b/LaravelDiffApp/app/Http/Kernel.php
+index 3439540..74b1cbd 100644
+--- a/LaravelDiffApp/app/Http/Kernel.php
++++ b/LaravelDiffApp/app/Http/Kernel.php
+@@ -57,7 +57,6 @@ class Kernel extends HttpKernel
+         'cache.headers' => \Illuminate\Http\Middleware\SetCacheHeaders::class,
+         'can' => \Illuminate\Auth\Middleware\Authorize::class,
+         'guest' => \App\Http\Middleware\RedirectIfAuthenticated::class,
+-        'signed' => \Illuminate\Routing\Middleware\ValidateSignature::class,
+         'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
+     ];
+ }
+diff --git a/LaravelDiffApp/composer.json b/LaravelDiffApp/composer.json
+index 65bf8b4..27695dc 100644
+--- a/LaravelDiffApp/composer.json
++++ b/LaravelDiffApp/composer.json
+@@ -5,17 +5,18 @@
+     "license": "MIT",
+     "type": "project",
+     "require": {
+-        "php": "^7.1.3",
+-        "fideloper/proxy": "^4.0",
++        "php": ">=7.1.3",
++        "fideloper/proxy": "~4.0",
+         "laravel/framework": "5.6.*",
+-        "laravel/tinker": "^1.0"
++        "laravel/tinker": "~1.0"
+     },
+     "require-dev": {
+-        "filp/whoops": "^2.0",
+-        "fzaninotto/faker": "^1.4",
+-        "mockery/mockery": "^1.0",
+-        "nunomaduro/collision": "^2.0",
+-        "phpunit/phpunit": "^7.0"
++        "filp/whoops": "~2.0",
++        "nunomaduro/collision": "~1.1",
++        "fzaninotto/faker": "~1.4",
++        "mockery/mockery": "~1.0",
++        "phpunit/phpunit": "~7.0",
++        "symfony/thanks": "^1.0"
+     },
+     "autoload": {
+         "classmap": [
+diff --git a/LaravelDiffApp/config/filesystems.php b/LaravelDiffApp/config/filesystems.php
+index 77fa5de..67158a5 100644
+--- a/LaravelDiffApp/config/filesystems.php
++++ b/LaravelDiffApp/config/filesystems.php
+@@ -37,7 +37,7 @@ return [
+     | may even configure multiple disks of the same driver. Defaults have
+     | been setup for each driver as an example of the required options.
+     |
+-    | Supported Drivers: "local", "ftp", "sftp", "s3", "rackspace"
++    | Supported Drivers: "local", "ftp", "s3", "rackspace"
+     |
+     */
+ 
+diff --git a/LaravelDiffApp/config/queue.php b/LaravelDiffApp/config/queue.php
+index 391304f..87b1b1b 100644
+--- a/LaravelDiffApp/config/queue.php
++++ b/LaravelDiffApp/config/queue.php
+@@ -4,12 +4,14 @@ return [
+ 
+     /*
+     |--------------------------------------------------------------------------
+-    | Default Queue Connection Name
++    | Default Queue Driver
+     |--------------------------------------------------------------------------
+     |
+     | Laravel's queue API supports an assortment of back-ends via a single
+     | API, giving you convenient access to each back-end using the same
+-    | syntax for every one. Here you may define a default connection.
++    | syntax for each one. Here you may set the default queue driver.
++    |
++    | Supported: "sync", "database", "beanstalkd", "sqs", "redis", "null"
+     |
+     */
+ 
+@@ -24,8 +26,6 @@ return [
+     | is used by your application. A default configuration has been added
+     | for each back-end shipped with Laravel. You are free to add more.
+     |
+-    | Drivers: "sync", "database", "beanstalkd", "sqs", "redis", "null"
+-    |
+     */
+ 
+     'connections' => [
+diff --git a/LaravelDiffApp/package.json b/LaravelDiffApp/package.json
+index 3de8d8d..ecf0bcc 100644
+--- a/LaravelDiffApp/package.json
++++ b/LaravelDiffApp/package.json
+@@ -10,7 +10,7 @@
+         "production": "cross-env NODE_ENV=production node_modules/webpack/bin/webpack.js --no-progress --hide-modules --config=node_modules/laravel-mix/setup/webpack.config.js"
+     },
+     "devDependencies": {
+-        "axios": "^0.18",
++        "axios": "^0.17",
+         "bootstrap": "^4.0.0",
+         "popper.js": "^1.12",
+         "cross-env": "^5.1",
+diff --git a/LaravelDiffApp/phpunit.xml b/LaravelDiffApp/phpunit.xml
+index 9ee3e73..bb9c4a7 100644
+--- a/LaravelDiffApp/phpunit.xml
++++ b/LaravelDiffApp/phpunit.xml
+@@ -27,6 +27,5 @@
+         <env name="CACHE_DRIVER" value="array"/>
+         <env name="SESSION_DRIVER" value="array"/>
+         <env name="QUEUE_DRIVER" value="sync"/>
+-        <env name="MAIL_DRIVER" value="array"/>
+     </php>
+ </phpunit>
+diff --git a/LaravelDiffApp/resources/assets/sass/_variables.scss b/LaravelDiffApp/resources/assets/sass/_variables.scss
+index 70ecfdb..1c44aff 100644
+--- a/LaravelDiffApp/resources/assets/sass/_variables.scss
++++ b/LaravelDiffApp/resources/assets/sass/_variables.scss
+@@ -6,3 +6,13 @@ $body-bg: #f5f8fa;
+ $font-family-sans-serif: "Raleway", sans-serif;
+ $font-size-base: 0.9rem;
+ $line-height-base: 1.6;
++$text-color: #636b6f;
++
++// Navbar
++$navbar-default-bg: #fff;
++
++// Buttons
++$btn-default-color: $text-color;
++
++// Panels
++$panel-default-heading-bg: #fff;
+diff --git a/LaravelDiffApp/resources/lang/en/validation.php b/LaravelDiffApp/resources/lang/en/validation.php
+index 77d2302..edc036d 100644
+--- a/LaravelDiffApp/resources/lang/en/validation.php
++++ b/LaravelDiffApp/resources/lang/en/validation.php
+@@ -65,7 +65,6 @@ return [
+         'array'   => 'The :attribute must have at least :min items.',
+     ],
+     'not_in'               => 'The selected :attribute is invalid.',
+-    'not_regex'            => 'The :attribute format is invalid.',
+     'numeric'              => 'The :attribute must be a number.',
+     'present'              => 'The :attribute field must be present.',
+     'regex'                => 'The :attribute format is invalid.',

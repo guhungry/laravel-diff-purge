@@ -1,0 +1,250 @@
+diff --git a/LaravelDiffApp/.gitignore b/LaravelDiffApp/.gitignore
+index c47965c..7c8b031 100644
+--- a/LaravelDiffApp/.gitignore
++++ b/LaravelDiffApp/.gitignore
+@@ -1,3 +1,4 @@
+ /vendor
+ /node_modules
++Homestead.yaml
+ .env
+diff --git a/LaravelDiffApp/app/Exceptions/Handler.php b/LaravelDiffApp/app/Exceptions/Handler.php
+index 7c9b365..2cc435b 100644
+--- a/LaravelDiffApp/app/Exceptions/Handler.php
++++ b/LaravelDiffApp/app/Exceptions/Handler.php
+@@ -3,6 +3,7 @@
+ namespace App\Exceptions;
+ 
+ use Exception;
++use Symfony\Component\HttpKernel\Exception\HttpException;
+ use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
+ 
+ class Handler extends ExceptionHandler
+@@ -13,7 +14,7 @@ class Handler extends ExceptionHandler
+      * @var array
+      */
+     protected $dontReport = [
+-        \Symfony\Component\HttpKernel\Exception\HttpException::class,
++        HttpException::class,
+     ];
+ 
+     /**
+diff --git a/LaravelDiffApp/composer.json b/LaravelDiffApp/composer.json
+index cb00aa9..a6ced5e 100644
+--- a/LaravelDiffApp/composer.json
++++ b/LaravelDiffApp/composer.json
+@@ -32,8 +32,10 @@
+             "php artisan clear-compiled",
+             "php artisan optimize"
+         ],
++        "pre-update-cmd": [
++            "php artisan clear-compiled"
++        ],
+         "post-update-cmd": [
+-            "php artisan clear-compiled",
+             "php artisan optimize"
+         ],
+         "post-root-package-install": [
+@@ -45,7 +47,5 @@
+     },
+     "config": {
+         "preferred-install": "dist"
+-    },
+-    "minimum-stability": "dev",
+-    "prefer-stable": true
++    }
+ }
+diff --git a/LaravelDiffApp/config/app.php b/LaravelDiffApp/config/app.php
+index 3f5dc57..15c75aa 100644
+--- a/LaravelDiffApp/config/app.php
++++ b/LaravelDiffApp/config/app.php
+@@ -13,7 +13,7 @@ return [
+     |
+     */
+ 
+-    'debug' => env('APP_DEBUG'),
++    'debug' => env('APP_DEBUG', false),
+ 
+     /*
+     |--------------------------------------------------------------------------
+diff --git a/LaravelDiffApp/config/database.php b/LaravelDiffApp/config/database.php
+index 503da61..f6cf86b 100644
+--- a/LaravelDiffApp/config/database.php
++++ b/LaravelDiffApp/config/database.php
+@@ -81,6 +81,7 @@ return [
+             'database' => env('DB_DATABASE', 'forge'),
+             'username' => env('DB_USERNAME', 'forge'),
+             'password' => env('DB_PASSWORD', ''),
++            'charset'  => 'utf8',
+             'prefix'   => '',
+         ],
+ 
+diff --git a/LaravelDiffApp/config/services.php b/LaravelDiffApp/config/services.php
+index 588c3c7..51abbbd 100644
+--- a/LaravelDiffApp/config/services.php
++++ b/LaravelDiffApp/config/services.php
+@@ -24,14 +24,14 @@ return [
+     ],
+ 
+     'ses' => [
+-        'key' => '',
++        'key'    => '',
+         'secret' => '',
+         'region' => 'us-east-1',
+     ],
+ 
+     'stripe' => [
+         'model'  => App\User::class,
+-        'key' => '',
++        'key'    => '',
+         'secret' => '',
+     ],
+ 
+diff --git a/LaravelDiffApp/database/seeds/DatabaseSeeder.php b/LaravelDiffApp/database/seeds/DatabaseSeeder.php
+index fb9e600..988ea21 100644
+--- a/LaravelDiffApp/database/seeds/DatabaseSeeder.php
++++ b/LaravelDiffApp/database/seeds/DatabaseSeeder.php
+@@ -14,7 +14,7 @@ class DatabaseSeeder extends Seeder
+     {
+         Model::unguard();
+ 
+-        // $this->call('UserTableSeeder');
++        // $this->call(UserTableSeeder::class);
+ 
+         Model::reguard();
+     }
+diff --git a/LaravelDiffApp/gulpfile.js b/LaravelDiffApp/gulpfile.js
+index 7cf6267..483f6d3 100644
+--- a/LaravelDiffApp/gulpfile.js
++++ b/LaravelDiffApp/gulpfile.js
+@@ -12,5 +12,5 @@ var elixir = require('laravel-elixir');
+  */
+ 
+ elixir(function(mix) {
+-    mix.less('app.less');
++    mix.sass('app.scss');
+ });
+diff --git a/LaravelDiffApp/package.json b/LaravelDiffApp/package.json
+index 232bc7e..b1b4a6e 100644
+--- a/LaravelDiffApp/package.json
++++ b/LaravelDiffApp/package.json
+@@ -1,7 +1,10 @@
+ {
+   "private": true,
+   "devDependencies": {
+-    "gulp": "^3.8.8",
+-    "laravel-elixir": "^1.0.0"
++    "gulp": "^3.8.8"
++  },
++  "dependencies": {
++    "laravel-elixir": "^2.0.0",
++    "bootstrap-sass": "^3.0.0"
+   }
+ }
+diff --git a/LaravelDiffApp/phpunit.xml b/LaravelDiffApp/phpunit.xml
+index d66acd0..276262d 100644
+--- a/LaravelDiffApp/phpunit.xml
++++ b/LaravelDiffApp/phpunit.xml
+@@ -14,6 +14,11 @@
+             <directory>./tests/</directory>
+         </testsuite>
+     </testsuites>
++    <filter>
++        <whitelist>
++            <directory suffix=".php">app/</directory>
++        </whitelist>
++    </filter>
+     <php>
+         <env name="APP_ENV" value="testing"/>
+         <env name="CACHE_DRIVER" value="array"/>
+diff --git a/LaravelDiffApp/resources/assets/less/app.less b/LaravelDiffApp/resources/assets/less/app.less
+deleted file mode 100644
+index 8b13789..0000000
+--- a/LaravelDiffApp/resources/assets/less/app.less
++++ /dev/null
+@@ -1 +0,0 @@
+-
+diff --git a/LaravelDiffApp/resources/assets/sass/app.scss b/LaravelDiffApp/resources/assets/sass/app.scss
+new file mode 100644
+index 0000000..bb76e29
+--- /dev/null
++++ b/LaravelDiffApp/resources/assets/sass/app.scss
+@@ -0,0 +1,2 @@
++// @import "node_modules/bootstrap-sass/assets/stylesheets/bootstrap";
++
+diff --git a/LaravelDiffApp/resources/lang/en/validation.php b/LaravelDiffApp/resources/lang/en/validation.php
+index c0d0d7c..20acc9a 100644
+--- a/LaravelDiffApp/resources/lang/en/validation.php
++++ b/LaravelDiffApp/resources/lang/en/validation.php
+@@ -70,6 +70,7 @@ return [
+         'string'  => 'The :attribute must be :size characters.',
+         'array'   => 'The :attribute must contain :size items.',
+     ],
++    'string'               => 'The :attribute must be a string.',
+     'timezone'             => 'The :attribute must be a valid zone.',
+     'unique'               => 'The :attribute has already been taken.',
+     'url'                  => 'The :attribute format is invalid.',
+diff --git a/LaravelDiffApp/resources/views/errors/503.blade.php b/LaravelDiffApp/resources/views/errors/503.blade.php
+index 410ac07..0380666 100644
+--- a/LaravelDiffApp/resources/views/errors/503.blade.php
++++ b/LaravelDiffApp/resources/views/errors/503.blade.php
+@@ -1,15 +1,19 @@
++<!DOCTYPE html>
+ <html>
+     <head>
+         <title>Be right back.</title>
+ 
+-        <link href='//fonts.googleapis.com/css?family=Lato:100' rel='stylesheet' type='text/css'>
++        <link href="//fonts.googleapis.com/css?family=Lato:100" rel="stylesheet" type="text/css">
+ 
+         <style>
++            html, body {
++                height: 100%;
++            }
++
+             body {
+                 margin: 0;
+                 padding: 0;
+                 width: 100%;
+-                height: 100%;
+                 color: #B0BEC5;
+                 display: table;
+                 font-weight: 100;
+diff --git a/LaravelDiffApp/resources/views/welcome.blade.php b/LaravelDiffApp/resources/views/welcome.blade.php
+index 746adf5..301e58c 100644
+--- a/LaravelDiffApp/resources/views/welcome.blade.php
++++ b/LaravelDiffApp/resources/views/welcome.blade.php
+@@ -1,15 +1,19 @@
++<!DOCTYPE html>
+ <html>
+     <head>
+         <title>Laravel</title>
+ 
+-        <link href='//fonts.googleapis.com/css?family=Lato:100' rel='stylesheet' type='text/css'>
++        <link href="//fonts.googleapis.com/css?family=Lato:100" rel="stylesheet" type="text/css">
+ 
+         <style>
++            html, body {
++                height: 100%;
++            }
++
+             body {
+                 margin: 0;
+                 padding: 0;
+                 width: 100%;
+-                height: 100%;
+                 color: #B0BEC5;
+                 display: table;
+                 font-weight: 100;
+diff --git a/LaravelDiffApp/server.php b/LaravelDiffApp/server.php
+index fdbc49e..f65c7c4 100644
+--- a/LaravelDiffApp/server.php
++++ b/LaravelDiffApp/server.php
+@@ -14,7 +14,7 @@ $uri = urldecode(
+ // This file allows us to emulate Apache's "mod_rewrite" functionality from the
+ // built-in PHP web server. This provides a convenient way to test a Laravel
+ // application without having installed a "real" web server software here.
+-if ($uri !== '/' and file_exists(__DIR__.'/public'.$uri)) {
++if ($uri !== '/' && file_exists(__DIR__.'/public'.$uri)) {
+     return false;
+ }
+ 

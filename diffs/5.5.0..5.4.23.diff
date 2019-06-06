@@ -1,0 +1,598 @@
+diff --git a/LaravelDiffApp/.gitignore b/LaravelDiffApp/.gitignore
+index b6a4b86..2a41229 100644
+--- a/LaravelDiffApp/.gitignore
++++ b/LaravelDiffApp/.gitignore
+@@ -8,5 +8,4 @@
+ Homestead.json
+ Homestead.yaml
+ npm-debug.log
+-yarn-error.log
+ .env
+diff --git a/LaravelDiffApp/app/Console/Kernel.php b/LaravelDiffApp/app/Console/Kernel.php
+index a8c5158..622e774 100644
+--- a/LaravelDiffApp/app/Console/Kernel.php
++++ b/LaravelDiffApp/app/Console/Kernel.php
+@@ -29,14 +29,12 @@ class Kernel extends ConsoleKernel
+     }
+ 
+     /**
+-     * Register the commands for the application.
++     * Register the Closure based commands for the application.
+      *
+      * @return void
+      */
+     protected function commands()
+     {
+-        $this->load(__DIR__.'/Commands');
+-
+         require base_path('routes/console.php');
+     }
+ }
+diff --git a/LaravelDiffApp/app/Exceptions/Handler.php b/LaravelDiffApp/app/Exceptions/Handler.php
+index 7e2563a..a747e31 100644
+--- a/LaravelDiffApp/app/Exceptions/Handler.php
++++ b/LaravelDiffApp/app/Exceptions/Handler.php
+@@ -3,27 +3,23 @@
+ namespace App\Exceptions;
+ 
+ use Exception;
++use Illuminate\Auth\AuthenticationException;
+ use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
+ 
+ class Handler extends ExceptionHandler
+ {
+     /**
+-     * A list of the exception types that are not reported.
++     * A list of the exception types that should not be reported.
+      *
+      * @var array
+      */
+     protected $dontReport = [
+-        //
+-    ];
+-
+-    /**
+-     * A list of the inputs that are never flashed for validation exceptions.
+-     *
+-     * @var array
+-     */
+-    protected $dontFlash = [
+-        'password',
+-        'password_confirmation',
++        \Illuminate\Auth\AuthenticationException::class,
++        \Illuminate\Auth\Access\AuthorizationException::class,
++        \Symfony\Component\HttpKernel\Exception\HttpException::class,
++        \Illuminate\Database\Eloquent\ModelNotFoundException::class,
++        \Illuminate\Session\TokenMismatchException::class,
++        \Illuminate\Validation\ValidationException::class,
+     ];
+ 
+     /**
+@@ -50,4 +46,20 @@ class Handler extends ExceptionHandler
+     {
+         return parent::render($request, $exception);
+     }
++
++    /**
++     * Convert an authentication exception into an unauthenticated response.
++     *
++     * @param  \Illuminate\Http\Request  $request
++     * @param  \Illuminate\Auth\AuthenticationException  $exception
++     * @return \Illuminate\Http\Response
++     */
++    protected function unauthenticated($request, AuthenticationException $exception)
++    {
++        if ($request->expectsJson()) {
++            return response()->json(['error' => 'Unauthenticated.'], 401);
++        }
++
++        return redirect()->guest(route('login'));
++    }
+ }
+diff --git a/LaravelDiffApp/app/Http/Controllers/Auth/RegisterController.php b/LaravelDiffApp/app/Http/Controllers/Auth/RegisterController.php
+index f77265a..ed8d1b7 100644
+--- a/LaravelDiffApp/app/Http/Controllers/Auth/RegisterController.php
++++ b/LaravelDiffApp/app/Http/Controllers/Auth/RegisterController.php
+@@ -58,7 +58,7 @@ class RegisterController extends Controller
+      * Create a new user instance after a valid registration.
+      *
+      * @param  array  $data
+-     * @return \App\User
++     * @return User
+      */
+     protected function create(array $data)
+     {
+diff --git a/LaravelDiffApp/app/Http/Kernel.php b/LaravelDiffApp/app/Http/Kernel.php
+index 93bf68b..66d34c3 100644
+--- a/LaravelDiffApp/app/Http/Kernel.php
++++ b/LaravelDiffApp/app/Http/Kernel.php
+@@ -18,7 +18,6 @@ class Kernel extends HttpKernel
+         \Illuminate\Foundation\Http\Middleware\ValidatePostSize::class,
+         \App\Http\Middleware\TrimStrings::class,
+         \Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull::class,
+-        \App\Http\Middleware\TrustProxies::class,
+     ];
+ 
+     /**
+diff --git a/LaravelDiffApp/app/Http/Middleware/EncryptCookies.php b/LaravelDiffApp/app/Http/Middleware/EncryptCookies.php
+index 033136a..3aa15f8 100644
+--- a/LaravelDiffApp/app/Http/Middleware/EncryptCookies.php
++++ b/LaravelDiffApp/app/Http/Middleware/EncryptCookies.php
+@@ -2,9 +2,9 @@
+ 
+ namespace App\Http\Middleware;
+ 
+-use Illuminate\Cookie\Middleware\EncryptCookies as Middleware;
++use Illuminate\Cookie\Middleware\EncryptCookies as BaseEncrypter;
+ 
+-class EncryptCookies extends Middleware
++class EncryptCookies extends BaseEncrypter
+ {
+     /**
+      * The names of the cookies that should not be encrypted.
+diff --git a/LaravelDiffApp/app/Http/Middleware/TrimStrings.php b/LaravelDiffApp/app/Http/Middleware/TrimStrings.php
+index 5a50e7b..943e9a4 100644
+--- a/LaravelDiffApp/app/Http/Middleware/TrimStrings.php
++++ b/LaravelDiffApp/app/Http/Middleware/TrimStrings.php
+@@ -2,9 +2,9 @@
+ 
+ namespace App\Http\Middleware;
+ 
+-use Illuminate\Foundation\Http\Middleware\TrimStrings as Middleware;
++use Illuminate\Foundation\Http\Middleware\TrimStrings as BaseTrimmer;
+ 
+-class TrimStrings extends Middleware
++class TrimStrings extends BaseTrimmer
+ {
+     /**
+      * The names of the attributes that should not be trimmed.
+diff --git a/LaravelDiffApp/app/Http/Middleware/TrustProxies.php b/LaravelDiffApp/app/Http/Middleware/TrustProxies.php
+deleted file mode 100644
+index ef1c00d..0000000
+--- a/LaravelDiffApp/app/Http/Middleware/TrustProxies.php
++++ /dev/null
+@@ -1,29 +0,0 @@
+-<?php
+-
+-namespace App\Http\Middleware;
+-
+-use Illuminate\Http\Request;
+-use Fideloper\Proxy\TrustProxies as Middleware;
+-
+-class TrustProxies extends Middleware
+-{
+-    /**
+-     * The trusted proxies for this application.
+-     *
+-     * @var array
+-     */
+-    protected $proxies;
+-
+-    /**
+-     * The current proxy header mappings.
+-     *
+-     * @var array
+-     */
+-    protected $headers = [
+-        Request::HEADER_FORWARDED => 'FORWARDED',
+-        Request::HEADER_X_FORWARDED_FOR => 'X_FORWARDED_FOR',
+-        Request::HEADER_X_FORWARDED_HOST => 'X_FORWARDED_HOST',
+-        Request::HEADER_X_FORWARDED_PORT => 'X_FORWARDED_PORT',
+-        Request::HEADER_X_FORWARDED_PROTO => 'X_FORWARDED_PROTO',
+-    ];
+-}
+diff --git a/LaravelDiffApp/app/Http/Middleware/VerifyCsrfToken.php b/LaravelDiffApp/app/Http/Middleware/VerifyCsrfToken.php
+index 0c13b85..a2c3541 100644
+--- a/LaravelDiffApp/app/Http/Middleware/VerifyCsrfToken.php
++++ b/LaravelDiffApp/app/Http/Middleware/VerifyCsrfToken.php
+@@ -2,9 +2,9 @@
+ 
+ namespace App\Http\Middleware;
+ 
+-use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken as Middleware;
++use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken as BaseVerifier;
+ 
+-class VerifyCsrfToken extends Middleware
++class VerifyCsrfToken extends BaseVerifier
+ {
+     /**
+      * The URIs that should be excluded from CSRF verification.
+diff --git a/LaravelDiffApp/artisan b/LaravelDiffApp/artisan
+index 5c23e2e..44dc07b 100755
+--- a/LaravelDiffApp/artisan
++++ b/LaravelDiffApp/artisan
+@@ -1,8 +1,6 @@
+ #!/usr/bin/env php
+ <?php
+ 
+-define('LARAVEL_START', microtime(true));
+-
+ /*
+ |--------------------------------------------------------------------------
+ | Register The Auto Loader
+@@ -15,7 +13,7 @@ define('LARAVEL_START', microtime(true));
+ |
+ */
+ 
+-require __DIR__.'/vendor/autoload.php';
++require __DIR__.'/bootstrap/autoload.php';
+ 
+ $app = require_once __DIR__.'/bootstrap/app.php';
+ 
+diff --git a/LaravelDiffApp/bootstrap/autoload.php b/LaravelDiffApp/bootstrap/autoload.php
+new file mode 100644
+index 0000000..c64e19f
+--- /dev/null
++++ b/LaravelDiffApp/bootstrap/autoload.php
+@@ -0,0 +1,17 @@
++<?php
++
++define('LARAVEL_START', microtime(true));
++
++/*
++|--------------------------------------------------------------------------
++| Register The Composer Auto Loader
++|--------------------------------------------------------------------------
++|
++| Composer provides a convenient, automatically generated class loader
++| for our application. We just need to utilize it! We'll require it
++| into the script here so we do not have to manually load any of
++| our application's PHP classes. It just feels great to relax.
++|
++*/
++
++require __DIR__.'/../vendor/autoload.php';
+diff --git a/LaravelDiffApp/composer.json b/LaravelDiffApp/composer.json
+index 6ba7fc2..eb080e9 100644
+--- a/LaravelDiffApp/composer.json
++++ b/LaravelDiffApp/composer.json
+@@ -5,21 +5,18 @@
+     "license": "MIT",
+     "type": "project",
+     "require": {
+-        "php": ">=7.0.0",
+-        "fideloper/proxy": "~3.3",
+-        "laravel/framework": "5.5.*",
++        "php": ">=5.6.4",
++        "laravel/framework": "5.4.*",
+         "laravel/tinker": "~1.0"
+     },
+     "require-dev": {
+-        "filp/whoops": "~2.0",
+         "fzaninotto/faker": "~1.4",
+         "mockery/mockery": "0.9.*",
+-        "phpunit/phpunit": "~6.0"
++        "phpunit/phpunit": "~5.7"
+     },
+     "autoload": {
+         "classmap": [
+-            "database/seeds",
+-            "database/factories"
++            "database"
+         ],
+         "psr-4": {
+             "App\\": "app/"
+@@ -30,22 +27,20 @@
+             "Tests\\": "tests/"
+         }
+     },
+-    "extra": {
+-        "laravel": {
+-            "dont-discover": [
+-            ]
+-        }
+-    },
+     "scripts": {
+         "post-root-package-install": [
+-            "@php -r \"file_exists('.env') || copy('.env.example', '.env');\""
++            "php -r \"file_exists('.env') || copy('.env.example', '.env');\""
+         ],
+         "post-create-project-cmd": [
+-            "@php artisan key:generate"
++            "php artisan key:generate"
++        ],
++        "post-install-cmd": [
++            "Illuminate\\Foundation\\ComposerScripts::postInstall",
++            "php artisan optimize"
+         ],
+-        "post-autoload-dump": [
+-            "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
+-            "@php artisan package:discover"
++        "post-update-cmd": [
++            "Illuminate\\Foundation\\ComposerScripts::postUpdate",
++            "php artisan optimize"
+         ]
+     },
+     "config": {
+diff --git a/LaravelDiffApp/config/app.php b/LaravelDiffApp/config/app.php
+index 0e4ebed..135e977 100644
+--- a/LaravelDiffApp/config/app.php
++++ b/LaravelDiffApp/config/app.php
+@@ -10,7 +10,6 @@ return [
+     | This value is the name of your application. This value is used when the
+     | framework needs to place the application's name in a notification or
+     | any other location as required by the application or its packages.
+-    |
+     */
+ 
+     'name' => env('APP_NAME', 'Laravel'),
+@@ -167,6 +166,7 @@ return [
+         /*
+          * Package Service Providers...
+          */
++        Laravel\Tinker\TinkerServiceProvider::class,
+ 
+         /*
+          * Application Service Providers...
+diff --git a/LaravelDiffApp/config/session.php b/LaravelDiffApp/config/session.php
+index 71ad0ed..e2779ad 100644
+--- a/LaravelDiffApp/config/session.php
++++ b/LaravelDiffApp/config/session.php
+@@ -122,10 +122,7 @@ return [
+     |
+     */
+ 
+-    'cookie' => env(
+-        'SESSION_COOKIE',
+-        str_slug(env('APP_NAME', 'laravel'), '_').'_session'
+-    ),
++    'cookie' => 'laravel_session',
+ 
+     /*
+     |--------------------------------------------------------------------------
+@@ -179,19 +176,4 @@ return [
+ 
+     'http_only' => true,
+ 
+-    /*
+-    |--------------------------------------------------------------------------
+-    | Same-Site Cookies
+-    |--------------------------------------------------------------------------
+-    |
+-    | This option determines how your cookies behave when cross-site requests
+-    | take place, and can be used to mitigate CSRF attacks. By default, we
+-    | do not enable this as other CSRF protection services are in place.
+-    |
+-    | Supported: "lax", "strict"
+-    |
+-    */
+-
+-    'same_site' => null,
+-
+ ];
+diff --git a/LaravelDiffApp/database/factories/UserFactory.php b/LaravelDiffApp/database/factories/ModelFactory.php
+similarity index 55%
+rename from LaravelDiffApp/database/factories/UserFactory.php
+rename to LaravelDiffApp/database/factories/ModelFactory.php
+index 061d75a..7926c79 100644
+--- a/LaravelDiffApp/database/factories/UserFactory.php
++++ b/LaravelDiffApp/database/factories/ModelFactory.php
+@@ -1,19 +1,18 @@
+ <?php
+ 
+-use Faker\Generator as Faker;
+-
+ /*
+ |--------------------------------------------------------------------------
+ | Model Factories
+ |--------------------------------------------------------------------------
+ |
+-| This directory should contain each of the model factory definitions for
+-| your application. Factories provide a convenient way to generate new
+-| model instances for testing / seeding your application's database.
++| Here you may define all of your model factories. Model factories give
++| you a convenient way to create models for testing and seeding your
++| database. Just tell the factory how a default model should look.
+ |
+ */
+ 
+-$factory->define(App\User::class, function (Faker $faker) {
++/** @var \Illuminate\Database\Eloquent\Factory $factory */
++$factory->define(App\User::class, function (Faker\Generator $faker) {
+     static $password;
+ 
+     return [
+diff --git a/LaravelDiffApp/package.json b/LaravelDiffApp/package.json
+index dedcbef..83294b6 100644
+--- a/LaravelDiffApp/package.json
++++ b/LaravelDiffApp/package.json
+@@ -1,21 +1,21 @@
+ {
+-    "private": true,
+-    "scripts": {
+-        "dev": "npm run development",
+-        "development": "cross-env NODE_ENV=development node_modules/webpack/bin/webpack.js --progress --hide-modules --config=node_modules/laravel-mix/setup/webpack.config.js",
+-        "watch": "cross-env NODE_ENV=development node_modules/webpack/bin/webpack.js --watch --progress --hide-modules --config=node_modules/laravel-mix/setup/webpack.config.js",
+-        "watch-poll": "npm run watch -- --watch-poll",
+-        "hot": "cross-env NODE_ENV=development node_modules/webpack-dev-server/bin/webpack-dev-server.js --inline --hot --config=node_modules/laravel-mix/setup/webpack.config.js",
+-        "prod": "npm run production",
+-        "production": "cross-env NODE_ENV=production node_modules/webpack/bin/webpack.js --progress --hide-modules --config=node_modules/laravel-mix/setup/webpack.config.js"
+-    },
+-    "devDependencies": {
+-        "axios": "^0.16.2",
+-        "bootstrap-sass": "^3.3.7",
+-        "cross-env": "^5.0.1",
+-        "jquery": "^3.1.1",
+-        "laravel-mix": "^1.0",
+-        "lodash": "^4.17.4",
+-        "vue": "^2.1.10"
+-    }
++  "private": true,
++  "scripts": {
++    "dev": "npm run development",
++    "development": "cross-env NODE_ENV=development node_modules/webpack/bin/webpack.js --progress --hide-modules --config=node_modules/laravel-mix/setup/webpack.config.js",
++    "watch": "cross-env NODE_ENV=development node_modules/webpack/bin/webpack.js --watch --progress --hide-modules --config=node_modules/laravel-mix/setup/webpack.config.js",
++    "watch-poll": "npm run watch -- --watch-poll",
++    "hot": "cross-env NODE_ENV=development node_modules/webpack-dev-server/bin/webpack-dev-server.js --inline --hot --config=node_modules/laravel-mix/setup/webpack.config.js",
++    "prod": "npm run production",
++    "production": "cross-env NODE_ENV=production node_modules/webpack/bin/webpack.js --progress --hide-modules --config=node_modules/laravel-mix/setup/webpack.config.js"
++  },
++  "devDependencies": {
++    "axios": "^0.15.3",
++    "bootstrap-sass": "^3.3.7",
++    "cross-env": "^3.2.3",
++    "jquery": "^3.1.1",
++    "laravel-mix": "0.*",
++    "lodash": "^4.17.4",
++    "vue": "^2.1.10"
++  }
+ }
+diff --git a/LaravelDiffApp/phpunit.xml b/LaravelDiffApp/phpunit.xml
+index bb9c4a7..a2c496e 100644
+--- a/LaravelDiffApp/phpunit.xml
++++ b/LaravelDiffApp/phpunit.xml
+@@ -1,7 +1,7 @@
+ <?xml version="1.0" encoding="UTF-8"?>
+ <phpunit backupGlobals="false"
+          backupStaticAttributes="false"
+-         bootstrap="vendor/autoload.php"
++         bootstrap="bootstrap/autoload.php"
+          colors="true"
+          convertErrorsToExceptions="true"
+          convertNoticesToExceptions="true"
+@@ -9,11 +9,11 @@
+          processIsolation="false"
+          stopOnFailure="false">
+     <testsuites>
+-        <testsuite name="Feature">
++        <testsuite name="Feature Tests">
+             <directory suffix="Test.php">./tests/Feature</directory>
+         </testsuite>
+ 
+-        <testsuite name="Unit">
++        <testsuite name="Unit Tests">
+             <directory suffix="Test.php">./tests/Unit</directory>
+         </testsuite>
+     </testsuites>
+diff --git a/LaravelDiffApp/public/.htaccess b/LaravelDiffApp/public/.htaccess
+index 0968348..903f639 100644
+--- a/LaravelDiffApp/public/.htaccess
++++ b/LaravelDiffApp/public/.htaccess
+@@ -7,8 +7,7 @@
+ 
+     # Redirect Trailing Slashes If Not A Folder...
+     RewriteCond %{REQUEST_FILENAME} !-d
+-    RewriteCond %{REQUEST_URI} (.+)/$
+-    RewriteRule ^ %1 [L,R=301]
++    RewriteRule ^(.*)/$ /$1 [L,R=301]
+ 
+     # Handle Front Controller...
+     RewriteCond %{REQUEST_FILENAME} !-d
+diff --git a/LaravelDiffApp/public/index.php b/LaravelDiffApp/public/index.php
+index 4584cbc..1e1d775 100644
+--- a/LaravelDiffApp/public/index.php
++++ b/LaravelDiffApp/public/index.php
+@@ -7,8 +7,6 @@
+  * @author   Taylor Otwell <taylor@laravel.com>
+  */
+ 
+-define('LARAVEL_START', microtime(true));
+-
+ /*
+ |--------------------------------------------------------------------------
+ | Register The Auto Loader
+@@ -21,7 +19,7 @@ define('LARAVEL_START', microtime(true));
+ |
+ */
+ 
+-require __DIR__.'/../vendor/autoload.php';
++require __DIR__.'/../bootstrap/autoload.php';
+ 
+ /*
+ |--------------------------------------------------------------------------
+diff --git a/LaravelDiffApp/readme.md b/LaravelDiffApp/readme.md
+index 2639986..2fd50b6 100644
+--- a/LaravelDiffApp/readme.md
++++ b/LaravelDiffApp/readme.md
+@@ -37,8 +37,6 @@ We would like to extend our thanks to the following sponsors for helping fund on
+ - **[Styde](https://styde.net)**
+ - [Fragrantica](https://www.fragrantica.com)
+ - [SOFTonSOFA](https://softonsofa.com/)
+-- [User10](https://user10.com)
+-- [Soumettre.fr](https://soumettre.fr/)
+ 
+ ## Contributing
+ 
+diff --git a/LaravelDiffApp/resources/assets/sass/app.scss b/LaravelDiffApp/resources/assets/sass/app.scss
+index 1bbc550..35ce2dc 100644
+--- a/LaravelDiffApp/resources/assets/sass/app.scss
++++ b/LaravelDiffApp/resources/assets/sass/app.scss
+@@ -1,9 +1,9 @@
+ 
+ // Fonts
+-@import url("https://fonts.googleapis.com/css?family=Raleway:300,400,600");
++@import url(https://fonts.googleapis.com/css?family=Raleway:300,400,600);
+ 
+ // Variables
+ @import "variables";
+ 
+ // Bootstrap
+-@import "~bootstrap-sass/assets/stylesheets/bootstrap";
++@import "node_modules/bootstrap-sass/assets/stylesheets/bootstrap";
+diff --git a/LaravelDiffApp/resources/views/welcome.blade.php b/LaravelDiffApp/resources/views/welcome.blade.php
+index a246e10..cbb9ce8 100644
+--- a/LaravelDiffApp/resources/views/welcome.blade.php
++++ b/LaravelDiffApp/resources/views/welcome.blade.php
+@@ -1,5 +1,5 @@
+ <!doctype html>
+-<html lang="{{ app()->getLocale() }}">
++<html lang="{{ config('app.locale') }}">
+     <head>
+         <meta charset="utf-8">
+         <meta http-equiv="X-UA-Compatible" content="IE=edge">
+@@ -68,12 +68,12 @@
+         <div class="flex-center position-ref full-height">
+             @if (Route::has('login'))
+                 <div class="top-right links">
+-                    @auth
++                    @if (Auth::check())
+                         <a href="{{ url('/home') }}">Home</a>
+                     @else
+-                        <a href="{{ route('login') }}">Login</a>
+-                        <a href="{{ route('register') }}">Register</a>
+-                    @endauth
++                        <a href="{{ url('/login') }}">Login</a>
++                        <a href="{{ url('/register') }}">Register</a>
++                    @endif
+                 </div>
+             @endif
+ 
+diff --git a/LaravelDiffApp/tests/Feature/ExampleTest.php b/LaravelDiffApp/tests/Feature/ExampleTest.php
+index f31e495..486dc27 100644
+--- a/LaravelDiffApp/tests/Feature/ExampleTest.php
++++ b/LaravelDiffApp/tests/Feature/ExampleTest.php
+@@ -3,7 +3,9 @@
+ namespace Tests\Feature;
+ 
+ use Tests\TestCase;
+-use Illuminate\Foundation\Testing\RefreshDatabase;
++use Illuminate\Foundation\Testing\WithoutMiddleware;
++use Illuminate\Foundation\Testing\DatabaseMigrations;
++use Illuminate\Foundation\Testing\DatabaseTransactions;
+ 
+ class ExampleTest extends TestCase
+ {
+diff --git a/LaravelDiffApp/tests/Unit/ExampleTest.php b/LaravelDiffApp/tests/Unit/ExampleTest.php
+index e9fe19c..5663bb4 100644
+--- a/LaravelDiffApp/tests/Unit/ExampleTest.php
++++ b/LaravelDiffApp/tests/Unit/ExampleTest.php
+@@ -3,7 +3,8 @@
+ namespace Tests\Unit;
+ 
+ use Tests\TestCase;
+-use Illuminate\Foundation\Testing\RefreshDatabase;
++use Illuminate\Foundation\Testing\DatabaseMigrations;
++use Illuminate\Foundation\Testing\DatabaseTransactions;
+ 
+ class ExampleTest extends TestCase
+ {
+diff --git a/LaravelDiffApp/webpack.mix.js b/LaravelDiffApp/webpack.mix.js
+index 72fdbb1..3e6f571 100644
+--- a/LaravelDiffApp/webpack.mix.js
++++ b/LaravelDiffApp/webpack.mix.js
+@@ -1,4 +1,4 @@
+-let mix = require('laravel-mix');
++const { mix } = require('laravel-mix');
+ 
+ /*
+  |--------------------------------------------------------------------------

@@ -1,0 +1,603 @@
+diff --git a/LaravelDiffApp/.env.example b/LaravelDiffApp/.env.example
+index cebc892..214b462 100644
+--- a/LaravelDiffApp/.env.example
++++ b/LaravelDiffApp/.env.example
+@@ -2,8 +2,7 @@ APP_ENV=local
+ APP_DEBUG=true
+ APP_KEY=SomeRandomString
+ 
+-DB_CONNECTION=mysql
+-DB_HOST=127.0.0.1
++DB_HOST=localhost
+ DB_DATABASE=homestead
+ DB_USERNAME=homestead
+ DB_PASSWORD=secret
+@@ -12,13 +11,9 @@ CACHE_DRIVER=file
+ SESSION_DRIVER=file
+ QUEUE_DRIVER=sync
+ 
+-REDIS_HOST=127.0.0.1
+-REDIS_PASSWORD=null
+-REDIS_PORT=6379
+-
+ MAIL_DRIVER=smtp
+ MAIL_HOST=mailtrap.io
+ MAIL_PORT=2525
+ MAIL_USERNAME=null
+ MAIL_PASSWORD=null
+-MAIL_ENCRYPTION=null
++MAIL_ENCRYPTION=null
+\ No newline at end of file
+diff --git a/LaravelDiffApp/.gitignore b/LaravelDiffApp/.gitignore
+index 2ff24d0..7c8b031 100644
+--- a/LaravelDiffApp/.gitignore
++++ b/LaravelDiffApp/.gitignore
+@@ -1,5 +1,4 @@
+ /vendor
+ /node_modules
+ Homestead.yaml
+-Homestead.json
+ .env
+diff --git a/LaravelDiffApp/app/Console/Kernel.php b/LaravelDiffApp/app/Console/Kernel.php
+index 5e4a31b..0aad259 100644
+--- a/LaravelDiffApp/app/Console/Kernel.php
++++ b/LaravelDiffApp/app/Console/Kernel.php
+@@ -13,7 +13,7 @@ class Kernel extends ConsoleKernel
+      * @var array
+      */
+     protected $commands = [
+-        Commands\Inspire::class,
++        \App\Console\Commands\Inspire::class,
+     ];
+ 
+     /**
+diff --git a/LaravelDiffApp/app/Exceptions/Handler.php b/LaravelDiffApp/app/Exceptions/Handler.php
+index 3dabc68..2cc435b 100644
+--- a/LaravelDiffApp/app/Exceptions/Handler.php
++++ b/LaravelDiffApp/app/Exceptions/Handler.php
+@@ -3,9 +3,7 @@
+ namespace App\Exceptions;
+ 
+ use Exception;
+-use Illuminate\Database\Eloquent\ModelNotFoundException;
+ use Symfony\Component\HttpKernel\Exception\HttpException;
+-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+ use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
+ 
+ class Handler extends ExceptionHandler
+@@ -17,7 +15,6 @@ class Handler extends ExceptionHandler
+      */
+     protected $dontReport = [
+         HttpException::class,
+-        ModelNotFoundException::class,
+     ];
+ 
+     /**
+@@ -42,10 +39,6 @@ class Handler extends ExceptionHandler
+      */
+     public function render($request, Exception $e)
+     {
+-        if ($e instanceof ModelNotFoundException) {
+-            $e = new NotFoundHttpException($e->getMessage(), $e);
+-        }
+-
+         return parent::render($request, $e);
+     }
+ }
+diff --git a/LaravelDiffApp/app/Http/Controllers/Controller.php b/LaravelDiffApp/app/Http/Controllers/Controller.php
+index 4eb37d5..9be752a 100644
+--- a/LaravelDiffApp/app/Http/Controllers/Controller.php
++++ b/LaravelDiffApp/app/Http/Controllers/Controller.php
+@@ -5,9 +5,8 @@ namespace App\Http\Controllers;
+ use Illuminate\Foundation\Bus\DispatchesJobs;
+ use Illuminate\Routing\Controller as BaseController;
+ use Illuminate\Foundation\Validation\ValidatesRequests;
+-use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+ 
+ abstract class Controller extends BaseController
+ {
+-    use AuthorizesRequests, DispatchesJobs, ValidatesRequests;
++    use DispatchesJobs, ValidatesRequests;
+ }
+diff --git a/LaravelDiffApp/app/Http/Middleware/Authenticate.php b/LaravelDiffApp/app/Http/Middleware/Authenticate.php
+index a5ef9c6..4fbafec 100644
+--- a/LaravelDiffApp/app/Http/Middleware/Authenticate.php
++++ b/LaravelDiffApp/app/Http/Middleware/Authenticate.php
+@@ -15,7 +15,7 @@ class Authenticate
+     protected $auth;
+ 
+     /**
+-     * Create a new middleware instance.
++     * Create a new filter instance.
+      *
+      * @param  Guard  $auth
+      * @return void
+diff --git a/LaravelDiffApp/app/Http/Middleware/RedirectIfAuthenticated.php b/LaravelDiffApp/app/Http/Middleware/RedirectIfAuthenticated.php
+index c85f9e5..495b629 100644
+--- a/LaravelDiffApp/app/Http/Middleware/RedirectIfAuthenticated.php
++++ b/LaravelDiffApp/app/Http/Middleware/RedirectIfAuthenticated.php
+@@ -35,7 +35,7 @@ class RedirectIfAuthenticated
+     public function handle($request, Closure $next)
+     {
+         if ($this->auth->check()) {
+-            return redirect('/');
++            return redirect('/home');
+         }
+ 
+         return $next($request);
+diff --git a/LaravelDiffApp/app/Jobs/Job.php b/LaravelDiffApp/app/Jobs/Job.php
+index 55ece29..d99ae7e 100644
+--- a/LaravelDiffApp/app/Jobs/Job.php
++++ b/LaravelDiffApp/app/Jobs/Job.php
+@@ -13,7 +13,7 @@ abstract class Job
+     |
+     | This job base class provides a central location to place any logic that
+     | is shared across all of your jobs. The trait included with the class
+-    | provides access to the "onQueue" and "delay" queue helper methods.
++    | provides access to the "queueOn" and "delay" queue helper methods.
+     |
+     */
+ 
+diff --git a/LaravelDiffApp/app/Policies/.gitkeep b/LaravelDiffApp/app/Policies/.gitkeep
+deleted file mode 100644
+index e69de29..0000000
+diff --git a/LaravelDiffApp/app/Providers/AuthServiceProvider.php b/LaravelDiffApp/app/Providers/AuthServiceProvider.php
+deleted file mode 100644
+index 57d88ea..0000000
+--- a/LaravelDiffApp/app/Providers/AuthServiceProvider.php
++++ /dev/null
+@@ -1,31 +0,0 @@
+-<?php
+-
+-namespace App\Providers;
+-
+-use Illuminate\Contracts\Auth\Access\Gate as GateContract;
+-use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
+-
+-class AuthServiceProvider extends ServiceProvider
+-{
+-    /**
+-     * The policy mappings for the application.
+-     *
+-     * @var array
+-     */
+-    protected $policies = [
+-        'App\Model' => 'App\Policies\ModelPolicy',
+-    ];
+-
+-    /**
+-     * Register any application authentication / authorization services.
+-     *
+-     * @param  \Illuminate\Contracts\Auth\Access\Gate  $gate
+-     * @return void
+-     */
+-    public function boot(GateContract $gate)
+-    {
+-        $this->registerPolicies($gate);
+-
+-        //
+-    }
+-}
+diff --git a/LaravelDiffApp/app/User.php b/LaravelDiffApp/app/User.php
+index 9f1e748..86eabed 100644
+--- a/LaravelDiffApp/app/User.php
++++ b/LaravelDiffApp/app/User.php
+@@ -5,16 +5,12 @@ namespace App;
+ use Illuminate\Auth\Authenticatable;
+ use Illuminate\Database\Eloquent\Model;
+ use Illuminate\Auth\Passwords\CanResetPassword;
+-use Illuminate\Foundation\Auth\Access\Authorizable;
+ use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
+-use Illuminate\Contracts\Auth\Access\Authorizable as AuthorizableContract;
+ use Illuminate\Contracts\Auth\CanResetPassword as CanResetPasswordContract;
+ 
+-class User extends Model implements AuthenticatableContract,
+-                                    AuthorizableContract,
+-                                    CanResetPasswordContract
++class User extends Model implements AuthenticatableContract, CanResetPasswordContract
+ {
+-    use Authenticatable, Authorizable, CanResetPassword;
++    use Authenticatable, CanResetPassword;
+ 
+     /**
+      * The database table used by the model.
+diff --git a/LaravelDiffApp/composer.json b/LaravelDiffApp/composer.json
+index 2b8950d..a6ced5e 100644
+--- a/LaravelDiffApp/composer.json
++++ b/LaravelDiffApp/composer.json
+@@ -28,19 +28,21 @@
+         ]
+     },
+     "scripts": {
+-        "post-root-package-install": [
+-            "php -r \"copy('.env.example', '.env');\""
+-        ],
+-        "post-create-project-cmd": [
+-            "php artisan key:generate"
+-        ],
+         "post-install-cmd": [
+-            "Illuminate\\Foundation\\ComposerScripts::postInstall",
++            "php artisan clear-compiled",
+             "php artisan optimize"
+         ],
++        "pre-update-cmd": [
++            "php artisan clear-compiled"
++        ],
+         "post-update-cmd": [
+-            "Illuminate\\Foundation\\ComposerScripts::postUpdate",
+             "php artisan optimize"
++        ],
++        "post-root-package-install": [
++            "php -r \"copy('.env.example', '.env');\""
++        ],
++        "post-create-project-cmd": [
++            "php artisan key:generate"
+         ]
+     },
+     "config": {
+diff --git a/LaravelDiffApp/config/app.php b/LaravelDiffApp/config/app.php
+index 036282a..15c75aa 100644
+--- a/LaravelDiffApp/config/app.php
++++ b/LaravelDiffApp/config/app.php
+@@ -95,7 +95,7 @@ return [
+     |
+     */
+ 
+-    'log' => env('APP_LOG', 'single'),
++    'log' => 'single',
+ 
+     /*
+     |--------------------------------------------------------------------------
+@@ -141,7 +141,6 @@ return [
+          * Application Service Providers...
+          */
+         App\Providers\AppServiceProvider::class,
+-        App\Providers\AuthServiceProvider::class,
+         App\Providers\EventServiceProvider::class,
+         App\Providers\RouteServiceProvider::class,
+ 
+@@ -173,9 +172,9 @@ return [
+         'Eloquent'  => Illuminate\Database\Eloquent\Model::class,
+         'Event'     => Illuminate\Support\Facades\Event::class,
+         'File'      => Illuminate\Support\Facades\File::class,
+-        'Gate'      => Illuminate\Support\Facades\Gate::class,
+         'Hash'      => Illuminate\Support\Facades\Hash::class,
+         'Input'     => Illuminate\Support\Facades\Input::class,
++        'Inspiring' => Illuminate\Foundation\Inspiring::class,
+         'Lang'      => Illuminate\Support\Facades\Lang::class,
+         'Log'       => Illuminate\Support\Facades\Log::class,
+         'Mail'      => Illuminate\Support\Facades\Mail::class,
+diff --git a/LaravelDiffApp/config/auth.php b/LaravelDiffApp/config/auth.php
+index 99d0630..7f4a87f 100644
+--- a/LaravelDiffApp/config/auth.php
++++ b/LaravelDiffApp/config/auth.php
+@@ -59,8 +59,8 @@ return [
+     */
+ 
+     'password' => [
+-        'email'  => 'emails.password',
+-        'table'  => 'password_resets',
++        'email' => 'emails.password',
++        'table' => 'password_resets',
+         'expire' => 60,
+     ],
+ 
+diff --git a/LaravelDiffApp/config/broadcasting.php b/LaravelDiffApp/config/broadcasting.php
+index abaaac3..36f9b3c 100644
+--- a/LaravelDiffApp/config/broadcasting.php
++++ b/LaravelDiffApp/config/broadcasting.php
+@@ -33,9 +33,6 @@ return [
+             'key' => env('PUSHER_KEY'),
+             'secret' => env('PUSHER_SECRET'),
+             'app_id' => env('PUSHER_APP_ID'),
+-            'options' => [
+-                //
+-            ],
+         ],
+ 
+         'redis' => [
+diff --git a/LaravelDiffApp/config/database.php b/LaravelDiffApp/config/database.php
+index 66e88a9..f6cf86b 100644
+--- a/LaravelDiffApp/config/database.php
++++ b/LaravelDiffApp/config/database.php
+@@ -48,7 +48,7 @@ return [
+ 
+         'sqlite' => [
+             'driver'   => 'sqlite',
+-            'database' => database_path('database.sqlite'),
++            'database' => storage_path('database.sqlite'),
+             'prefix'   => '',
+         ],
+ 
+@@ -116,9 +116,8 @@ return [
+         'cluster' => false,
+ 
+         'default' => [
+-            'host'     => env('REDIS_HOST', 'localhost'),
+-            'password' => env('REDIS_PASSWORD', null),
+-            'port'     => env('REDIS_PORT', 6379),
++            'host'     => '127.0.0.1',
++            'port'     => 6379,
+             'database' => 0,
+         ],
+ 
+diff --git a/LaravelDiffApp/config/mail.php b/LaravelDiffApp/config/mail.php
+index fd5123c..a22807e 100644
+--- a/LaravelDiffApp/config/mail.php
++++ b/LaravelDiffApp/config/mail.php
+@@ -119,6 +119,6 @@ return [
+     |
+     */
+ 
+-    'pretend' => env('MAIL_PRETEND', false),
++    'pretend' => false,
+ 
+ ];
+diff --git a/LaravelDiffApp/config/queue.php b/LaravelDiffApp/config/queue.php
+index 9d30238..cf9b09d 100644
+--- a/LaravelDiffApp/config/queue.php
++++ b/LaravelDiffApp/config/queue.php
+@@ -37,8 +37,8 @@ return [
+ 
+         'database' => [
+             'driver' => 'database',
+-            'table'  => 'jobs',
+-            'queue'  => 'default',
++            'table' => 'jobs',
++            'queue' => 'default',
+             'expire' => 60,
+         ],
+ 
+@@ -67,10 +67,10 @@ return [
+         ],
+ 
+         'redis' => [
+-            'driver'     => 'redis',
++            'driver' => 'redis',
+             'connection' => 'default',
+-            'queue'      => 'default',
+-            'expire'     => 60,
++            'queue'  => 'default',
++            'expire' => 60,
+         ],
+ 
+     ],
+@@ -87,8 +87,7 @@ return [
+     */
+ 
+     'failed' => [
+-        'database' => env('DB_CONNECTION', 'mysql'),
+-        'table'    => 'failed_jobs',
++        'database' => 'mysql', 'table' => 'failed_jobs',
+     ],
+ 
+ ];
+diff --git a/LaravelDiffApp/config/services.php b/LaravelDiffApp/config/services.php
+index 93eec86..51abbbd 100644
+--- a/LaravelDiffApp/config/services.php
++++ b/LaravelDiffApp/config/services.php
+@@ -15,24 +15,24 @@ return [
+     */
+ 
+     'mailgun' => [
+-        'domain' => env('MAILGUN_DOMAIN'),
+-        'secret' => env('MAILGUN_SECRET'),
++        'domain' => '',
++        'secret' => '',
+     ],
+ 
+     'mandrill' => [
+-        'secret' => env('MANDRILL_SECRET'),
++        'secret' => '',
+     ],
+ 
+     'ses' => [
+-        'key'    => env('SES_KEY'),
+-        'secret' => env('SES_SECRET'),
++        'key'    => '',
++        'secret' => '',
+         'region' => 'us-east-1',
+     ],
+ 
+     'stripe' => [
+         'model'  => App\User::class,
+-        'key'    => env('STRIPE_KEY'),
+-        'secret' => env('STRIPE_SECRET'),
++        'key'    => '',
++        'secret' => '',
+     ],
+ 
+ ];
+diff --git a/LaravelDiffApp/database/factories/ModelFactory.php b/LaravelDiffApp/database/factories/ModelFactory.php
+index f596d0b..ae7165b 100644
+--- a/LaravelDiffApp/database/factories/ModelFactory.php
++++ b/LaravelDiffApp/database/factories/ModelFactory.php
+@@ -11,11 +11,11 @@
+ |
+ */
+ 
+-$factory->define(App\User::class, function (Faker\Generator $faker) {
++$factory->define(App\User::class, function ($faker) {
+     return [
+         'name' => $faker->name,
+-        'email' => $faker->safeEmail,
+-        'password' => bcrypt(str_random(10)),
++        'email' => $faker->email,
++        'password' => str_random(10),
+         'remember_token' => str_random(10),
+     ];
+ });
+diff --git a/LaravelDiffApp/package.json b/LaravelDiffApp/package.json
+index 460ee90..b1b4a6e 100644
+--- a/LaravelDiffApp/package.json
++++ b/LaravelDiffApp/package.json
+@@ -4,7 +4,7 @@
+     "gulp": "^3.8.8"
+   },
+   "dependencies": {
+-    "laravel-elixir": "^4.0.0",
++    "laravel-elixir": "^2.0.0",
+     "bootstrap-sass": "^3.0.0"
+   }
+ }
+diff --git a/LaravelDiffApp/phpunit.xml b/LaravelDiffApp/phpunit.xml
+index 3e884d1..276262d 100644
+--- a/LaravelDiffApp/phpunit.xml
++++ b/LaravelDiffApp/phpunit.xml
+@@ -7,18 +7,16 @@
+          convertNoticesToExceptions="true"
+          convertWarningsToExceptions="true"
+          processIsolation="false"
+-         stopOnFailure="false">
++         stopOnFailure="false"
++         syntaxCheck="false">
+     <testsuites>
+         <testsuite name="Application Test Suite">
+-            <directory suffix="Test.php">./tests</directory>
++            <directory>./tests/</directory>
+         </testsuite>
+     </testsuites>
+     <filter>
+-        <whitelist processUncoveredFilesFromWhitelist="true">
+-            <directory suffix=".php">./app</directory>
+-            <exclude>
+-                <file>./app/Http/routes.php</file>
+-            </exclude>
++        <whitelist>
++            <directory suffix=".php">app/</directory>
+         </whitelist>
+     </filter>
+     <php>
+diff --git a/LaravelDiffApp/public/web.config b/LaravelDiffApp/public/web.config
+deleted file mode 100644
+index 2da2a95..0000000
+--- a/LaravelDiffApp/public/web.config
++++ /dev/null
+@@ -1,23 +0,0 @@
+-<configuration>
+-  <system.webServer>
+-    <rewrite>
+-      <rules>
+-        <rule name="Imported Rule 1" stopProcessing="true">
+-          <match url="^(.*)/$" ignoreCase="false" />
+-          <conditions>
+-            <add input="{REQUEST_FILENAME}" matchType="IsDirectory" ignoreCase="false" negate="true" />
+-          </conditions>
+-          <action type="Redirect" redirectType="Permanent" url="/{R:1}" />
+-        </rule>
+-        <rule name="Imported Rule 2" stopProcessing="true">
+-          <match url="^" ignoreCase="false" />
+-          <conditions>
+-            <add input="{REQUEST_FILENAME}" matchType="IsDirectory" ignoreCase="false" negate="true" />
+-            <add input="{REQUEST_FILENAME}" matchType="IsFile" ignoreCase="false" negate="true" />
+-          </conditions>
+-	  <action type="Rewrite" url="index.php" />
+-        </rule>
+-      </rules>
+-    </rewrite>
+-  </system.webServer>
+-</configuration>
+diff --git a/LaravelDiffApp/resources/lang/en/auth.php b/LaravelDiffApp/resources/lang/en/auth.php
+deleted file mode 100644
+index e5506df..0000000
+--- a/LaravelDiffApp/resources/lang/en/auth.php
++++ /dev/null
+@@ -1,19 +0,0 @@
+-<?php
+-
+-return [
+-
+-    /*
+-    |--------------------------------------------------------------------------
+-    | Authentication Language Lines
+-    |--------------------------------------------------------------------------
+-    |
+-    | The following language lines are used during authentication for various
+-    | messages that we need to display to the user. You are free to modify
+-    | these language lines according to your application's requirements.
+-    |
+-    */
+-
+-    'failed' => 'These credentials do not match our records.',
+-    'throttle' => 'Too many login attempts. Please try again in :seconds seconds.',
+-
+-];
+diff --git a/LaravelDiffApp/resources/lang/en/passwords.php b/LaravelDiffApp/resources/lang/en/passwords.php
+index e5544d2..7c10cba 100644
+--- a/LaravelDiffApp/resources/lang/en/passwords.php
++++ b/LaravelDiffApp/resources/lang/en/passwords.php
+@@ -4,7 +4,7 @@ return [
+ 
+     /*
+     |--------------------------------------------------------------------------
+-    | Password Reset Language Lines
++    | Password Reminder Language Lines
+     |--------------------------------------------------------------------------
+     |
+     | The following language lines are the default lines which match reasons
+@@ -14,9 +14,9 @@ return [
+     */
+ 
+     'password' => 'Passwords must be at least six characters and match the confirmation.',
+-    'reset' => 'Your password has been reset!',
+-    'sent' => 'We have e-mailed your password reset link!',
+-    'token' => 'This password reset token is invalid.',
+     'user' => "We can't find a user with that e-mail address.",
++    'token' => 'This password reset token is invalid.',
++    'sent' => 'We have e-mailed your password reset link!',
++    'reset' => 'Your password has been reset!',
+ 
+ ];
+diff --git a/LaravelDiffApp/resources/lang/en/validation.php b/LaravelDiffApp/resources/lang/en/validation.php
+index b0a1f14..20acc9a 100644
+--- a/LaravelDiffApp/resources/lang/en/validation.php
++++ b/LaravelDiffApp/resources/lang/en/validation.php
+@@ -35,13 +35,12 @@ return [
+     'digits'               => 'The :attribute must be :digits digits.',
+     'digits_between'       => 'The :attribute must be between :min and :max digits.',
+     'email'                => 'The :attribute must be a valid email address.',
+-    'exists'               => 'The selected :attribute is invalid.',
+     'filled'               => 'The :attribute field is required.',
++    'exists'               => 'The selected :attribute is invalid.',
+     'image'                => 'The :attribute must be an image.',
+     'in'                   => 'The selected :attribute is invalid.',
+     'integer'              => 'The :attribute must be an integer.',
+     'ip'                   => 'The :attribute must be a valid IP address.',
+-    'json'                 => 'The :attribute must be a valid JSON string.',
+     'max'                  => [
+         'numeric' => 'The :attribute may not be greater than :max.',
+         'file'    => 'The :attribute may not be greater than :max kilobytes.',
+@@ -60,7 +59,6 @@ return [
+     'regex'                => 'The :attribute format is invalid.',
+     'required'             => 'The :attribute field is required.',
+     'required_if'          => 'The :attribute field is required when :other is :value.',
+-    'required_unless'      => 'The :attribute field is required unless :other is in :values.',
+     'required_with'        => 'The :attribute field is required when :values is present.',
+     'required_with_all'    => 'The :attribute field is required when :values is present.',
+     'required_without'     => 'The :attribute field is required when :values is not present.',
+diff --git a/LaravelDiffApp/resources/views/errors/503.blade.php b/LaravelDiffApp/resources/views/errors/503.blade.php
+index 4a41505..0380666 100644
+--- a/LaravelDiffApp/resources/views/errors/503.blade.php
++++ b/LaravelDiffApp/resources/views/errors/503.blade.php
+@@ -3,7 +3,7 @@
+     <head>
+         <title>Be right back.</title>
+ 
+-        <link href="https://fonts.googleapis.com/css?family=Lato:100" rel="stylesheet" type="text/css">
++        <link href="//fonts.googleapis.com/css?family=Lato:100" rel="stylesheet" type="text/css">
+ 
+         <style>
+             html, body {
+diff --git a/LaravelDiffApp/resources/views/welcome.blade.php b/LaravelDiffApp/resources/views/welcome.blade.php
+index 87710ac..cb5d353 100644
+--- a/LaravelDiffApp/resources/views/welcome.blade.php
++++ b/LaravelDiffApp/resources/views/welcome.blade.php
+@@ -3,7 +3,7 @@
+     <head>
+         <title>Laravel</title>
+ 
+-        <link href="https://fonts.googleapis.com/css?family=Lato:100" rel="stylesheet" type="text/css">
++        <link href="//fonts.googleapis.com/css?family=Lato:100" rel="stylesheet" type="text/css">
+ 
+         <style>
+             html, body {

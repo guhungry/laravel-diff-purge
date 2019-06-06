@@ -1,0 +1,75 @@
+diff --git a/LaravelDiffApp/config/database.php b/LaravelDiffApp/config/database.php
+index a196943..cab5d06 100644
+--- a/LaravelDiffApp/config/database.php
++++ b/LaravelDiffApp/config/database.php
+@@ -67,6 +67,17 @@ return [
+             'sslmode' => 'prefer',
+         ],
+ 
++        'sqlsrv' => [
++            'driver' => 'sqlsrv',
++            'host' => env('DB_HOST', 'localhost'),
++            'port' => env('DB_PORT', '1433'),
++            'database' => env('DB_DATABASE', 'forge'),
++            'username' => env('DB_USERNAME', 'forge'),
++            'password' => env('DB_PASSWORD', ''),
++            'charset' => 'utf8',
++            'prefix' => '',
++        ],
++
+     ],
+ 
+     /*
+diff --git a/LaravelDiffApp/readme.md b/LaravelDiffApp/readme.md
+index b2c477c..2fd50b6 100644
+--- a/LaravelDiffApp/readme.md
++++ b/LaravelDiffApp/readme.md
+@@ -35,7 +35,6 @@ We would like to extend our thanks to the following sponsors for helping fund on
+ - **[Tighten Co.](https://tighten.co)**
+ - **[British Software Development](https://www.britishsoftware.co)**
+ - **[Styde](https://styde.net)**
+-- **[Codecourse](https://www.codecourse.com)**
+ - [Fragrantica](https://www.fragrantica.com)
+ - [SOFTonSOFA](https://softonsofa.com/)
+ 
+diff --git a/LaravelDiffApp/resources/assets/js/bootstrap.js b/LaravelDiffApp/resources/assets/js/bootstrap.js
+index b5d2602..8e0f04e 100644
+--- a/LaravelDiffApp/resources/assets/js/bootstrap.js
++++ b/LaravelDiffApp/resources/assets/js/bootstrap.js
+@@ -21,9 +21,22 @@ try {
+ 
+ window.axios = require('axios');
+ 
+-window.axios.defaults.headers.common['X-CSRF-TOKEN'] = window.Laravel.csrfToken;
+ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
+ 
++/**
++ * Next we will register the CSRF Token as a common header with Axios so that
++ * all outgoing HTTP requests automatically have it attached. This is just
++ * a simple convenience so we don't have to attach every token manually.
++ */
++
++let token = document.head.querySelector('meta[name="csrf-token"]');
++
++if (token) {
++    window.axios.defaults.headers.common['X-CSRF-TOKEN'] = token.content;
++} else {
++    console.error('CSRF token not found: https://laravel.com/docs/csrf#csrf-x-csrf-token');
++}
++
+ /**
+  * Echo exposes an expressive API for subscribing to channels and listening
+  * for events that are broadcast by Laravel. Echo and event broadcasting
+diff --git a/LaravelDiffApp/resources/lang/en/validation.php b/LaravelDiffApp/resources/lang/en/validation.php
+index 2a5c743..edc036d 100644
+--- a/LaravelDiffApp/resources/lang/en/validation.php
++++ b/LaravelDiffApp/resources/lang/en/validation.php
+@@ -47,6 +47,8 @@ return [
+     'in_array'             => 'The :attribute field does not exist in :other.',
+     'integer'              => 'The :attribute must be an integer.',
+     'ip'                   => 'The :attribute must be a valid IP address.',
++    'ipv4'                 => 'The :attribute must be a valid IPv4 address.',
++    'ipv6'                 => 'The :attribute must be a valid IPv6 address.',
+     'json'                 => 'The :attribute must be a valid JSON string.',
+     'max'                  => [
+         'numeric' => 'The :attribute may not be greater than :max.',

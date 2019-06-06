@@ -1,0 +1,146 @@
+diff --git a/LaravelDiffApp/artisan b/LaravelDiffApp/artisan
+index df630d0..44dc07b 100755
+--- a/LaravelDiffApp/artisan
++++ b/LaravelDiffApp/artisan
+@@ -40,7 +40,7 @@ $status = $kernel->handle(
+ | Shutdown The Application
+ |--------------------------------------------------------------------------
+ |
+-| Once Artisan has finished running. We will fire off the shutdown events
++| Once Artisan has finished running, we will fire off the shutdown events
+ | so that any final work may be done by the application before we shut
+ | down the process. This is the last thing to happen to the request.
+ |
+diff --git a/LaravelDiffApp/bootstrap/autoload.php b/LaravelDiffApp/bootstrap/autoload.php
+index 94adc99..c64e19f 100644
+--- a/LaravelDiffApp/bootstrap/autoload.php
++++ b/LaravelDiffApp/bootstrap/autoload.php
+@@ -9,8 +9,8 @@ define('LARAVEL_START', microtime(true));
+ |
+ | Composer provides a convenient, automatically generated class loader
+ | for our application. We just need to utilize it! We'll require it
+-| into the script here so that we do not have to worry about the
+-| loading of any our classes "manually". Feels great to relax.
++| into the script here so we do not have to manually load any of
++| our application's PHP classes. It just feels great to relax.
+ |
+ */
+ 
+diff --git a/LaravelDiffApp/config/database.php b/LaravelDiffApp/config/database.php
+index a196943..cab5d06 100644
+--- a/LaravelDiffApp/config/database.php
++++ b/LaravelDiffApp/config/database.php
+@@ -67,6 +67,17 @@ return [
+             'sslmode' => 'prefer',
+         ],
+ 
++        'sqlsrv' => [
++            'driver' => 'sqlsrv',
++            'host' => env('DB_HOST', 'localhost'),
++            'port' => env('DB_PORT', '1433'),
++            'database' => env('DB_DATABASE', 'forge'),
++            'username' => env('DB_USERNAME', 'forge'),
++            'password' => env('DB_PASSWORD', ''),
++            'charset' => 'utf8',
++            'prefix' => '',
++        ],
++
+     ],
+ 
+     /*
+diff --git a/LaravelDiffApp/config/filesystems.php b/LaravelDiffApp/config/filesystems.php
+index f59cf9e..4544f60 100644
+--- a/LaravelDiffApp/config/filesystems.php
++++ b/LaravelDiffApp/config/filesystems.php
+@@ -13,7 +13,7 @@ return [
+     |
+     */
+ 
+-    'default' => 'local',
++    'default' => env('FILESYSTEM_DRIVER', 'local'),
+ 
+     /*
+     |--------------------------------------------------------------------------
+@@ -26,7 +26,7 @@ return [
+     |
+     */
+ 
+-    'cloud' => 's3',
++    'cloud' => env('FILESYSTEM_CLOUD', 's3'),
+ 
+     /*
+     |--------------------------------------------------------------------------
+diff --git a/LaravelDiffApp/readme.md b/LaravelDiffApp/readme.md
+index 336ce59..2fd50b6 100644
+--- a/LaravelDiffApp/readme.md
++++ b/LaravelDiffApp/readme.md
+@@ -9,7 +9,7 @@
+ 
+ ## About Laravel
+ 
+-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable, creative experience to be truly fulfilling. Laravel attempts to take the pain out of development by easing common tasks used in the majority of web projects, such as:
++Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel attempts to take the pain out of development by easing common tasks used in the majority of web projects, such as:
+ 
+ - [Simple, fast routing engine](https://laravel.com/docs/routing).
+ - [Powerful dependency injection container](https://laravel.com/docs/container).
+@@ -35,8 +35,8 @@ We would like to extend our thanks to the following sponsors for helping fund on
+ - **[Tighten Co.](https://tighten.co)**
+ - **[British Software Development](https://www.britishsoftware.co)**
+ - **[Styde](https://styde.net)**
+-- **[Codecourse](https://www.codecourse.com)**
+ - [Fragrantica](https://www.fragrantica.com)
++- [SOFTonSOFA](https://softonsofa.com/)
+ 
+ ## Contributing
+ 
+diff --git a/LaravelDiffApp/resources/assets/js/bootstrap.js b/LaravelDiffApp/resources/assets/js/bootstrap.js
+index b5d2602..8e0f04e 100644
+--- a/LaravelDiffApp/resources/assets/js/bootstrap.js
++++ b/LaravelDiffApp/resources/assets/js/bootstrap.js
+@@ -21,9 +21,22 @@ try {
+ 
+ window.axios = require('axios');
+ 
+-window.axios.defaults.headers.common['X-CSRF-TOKEN'] = window.Laravel.csrfToken;
+ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
+ 
++/**
++ * Next we will register the CSRF Token as a common header with Axios so that
++ * all outgoing HTTP requests automatically have it attached. This is just
++ * a simple convenience so we don't have to attach every token manually.
++ */
++
++let token = document.head.querySelector('meta[name="csrf-token"]');
++
++if (token) {
++    window.axios.defaults.headers.common['X-CSRF-TOKEN'] = token.content;
++} else {
++    console.error('CSRF token not found: https://laravel.com/docs/csrf#csrf-x-csrf-token');
++}
++
+ /**
+  * Echo exposes an expressive API for subscribing to channels and listening
+  * for events that are broadcast by Laravel. Echo and event broadcasting
+diff --git a/LaravelDiffApp/resources/lang/en/validation.php b/LaravelDiffApp/resources/lang/en/validation.php
+index 2a5c743..edc036d 100644
+--- a/LaravelDiffApp/resources/lang/en/validation.php
++++ b/LaravelDiffApp/resources/lang/en/validation.php
+@@ -47,6 +47,8 @@ return [
+     'in_array'             => 'The :attribute field does not exist in :other.',
+     'integer'              => 'The :attribute must be an integer.',
+     'ip'                   => 'The :attribute must be a valid IP address.',
++    'ipv4'                 => 'The :attribute must be a valid IPv4 address.',
++    'ipv6'                 => 'The :attribute must be a valid IPv6 address.',
+     'json'                 => 'The :attribute must be a valid JSON string.',
+     'max'                  => [
+         'numeric' => 'The :attribute may not be greater than :max.',
+diff --git a/LaravelDiffApp/resources/views/welcome.blade.php b/LaravelDiffApp/resources/views/welcome.blade.php
+index 44b7e72..cbb9ce8 100644
+--- a/LaravelDiffApp/resources/views/welcome.blade.php
++++ b/LaravelDiffApp/resources/views/welcome.blade.php
+@@ -1,4 +1,4 @@
+-<!DOCTYPE html>
++<!doctype html>
+ <html lang="{{ config('app.locale') }}">
+     <head>
+         <meta charset="utf-8">

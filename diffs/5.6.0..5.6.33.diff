@@ -1,0 +1,515 @@
+diff --git a/LaravelDiffApp/.editorconfig b/LaravelDiffApp/.editorconfig
+new file mode 100644
+index 0000000..1492202
+--- /dev/null
++++ b/LaravelDiffApp/.editorconfig
+@@ -0,0 +1,16 @@
++root = true
++
++[*]
++charset = utf-8
++end_of_line = lf
++insert_final_newline = true
++indent_style = space
++indent_size = 4
++trim_trailing_whitespace = true
++
++[*.md]
++trim_trailing_whitespace = false
++
++[*.yml]
++indent_style = space
++indent_size = 2
+diff --git a/LaravelDiffApp/.gitignore b/LaravelDiffApp/.gitignore
+index 67c0aea..7c34e0f 100644
+--- a/LaravelDiffApp/.gitignore
++++ b/LaravelDiffApp/.gitignore
+@@ -11,3 +11,4 @@ Homestead.yaml
+ npm-debug.log
+ yarn-error.log
+ .env
++.phpunit.result.cache
+diff --git a/LaravelDiffApp/app/Exceptions/Handler.php b/LaravelDiffApp/app/Exceptions/Handler.php
+index 7e2563a..043cad6 100644
+--- a/LaravelDiffApp/app/Exceptions/Handler.php
++++ b/LaravelDiffApp/app/Exceptions/Handler.php
+@@ -29,8 +29,6 @@ class Handler extends ExceptionHandler
+     /**
+      * Report or log an exception.
+      *
+-     * This is a great spot to send exceptions to Sentry, Bugsnag, etc.
+-     *
+      * @param  \Exception  $exception
+      * @return void
+      */
+diff --git a/LaravelDiffApp/app/Http/Controllers/Auth/RegisterController.php b/LaravelDiffApp/app/Http/Controllers/Auth/RegisterController.php
+index f77265a..e749c07 100644
+--- a/LaravelDiffApp/app/Http/Controllers/Auth/RegisterController.php
++++ b/LaravelDiffApp/app/Http/Controllers/Auth/RegisterController.php
+@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
+ 
+ use App\User;
+ use App\Http\Controllers\Controller;
++use Illuminate\Support\Facades\Hash;
+ use Illuminate\Support\Facades\Validator;
+ use Illuminate\Foundation\Auth\RegistersUsers;
+ 
+@@ -65,7 +66,7 @@ class RegisterController extends Controller
+         return User::create([
+             'name' => $data['name'],
+             'email' => $data['email'],
+-            'password' => bcrypt($data['password']),
++            'password' => Hash::make($data['password']),
+         ]);
+     }
+ }
+diff --git a/LaravelDiffApp/app/Http/Kernel.php b/LaravelDiffApp/app/Http/Kernel.php
+index 74b1cbd..fb9616a 100644
+--- a/LaravelDiffApp/app/Http/Kernel.php
++++ b/LaravelDiffApp/app/Http/Kernel.php
+@@ -14,7 +14,7 @@ class Kernel extends HttpKernel
+      * @var array
+      */
+     protected $middleware = [
+-        \Illuminate\Foundation\Http\Middleware\CheckForMaintenanceMode::class,
++        \App\Http\Middleware\CheckForMaintenanceMode::class,
+         \Illuminate\Foundation\Http\Middleware\ValidatePostSize::class,
+         \App\Http\Middleware\TrimStrings::class,
+         \Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull::class,
+@@ -57,6 +57,7 @@ class Kernel extends HttpKernel
+         'cache.headers' => \Illuminate\Http\Middleware\SetCacheHeaders::class,
+         'can' => \Illuminate\Auth\Middleware\Authorize::class,
+         'guest' => \App\Http\Middleware\RedirectIfAuthenticated::class,
++        'signed' => \Illuminate\Routing\Middleware\ValidateSignature::class,
+         'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
+     ];
+ }
+diff --git a/LaravelDiffApp/app/Http/Middleware/CheckForMaintenanceMode.php b/LaravelDiffApp/app/Http/Middleware/CheckForMaintenanceMode.php
+new file mode 100644
+index 0000000..35b9824
+--- /dev/null
++++ b/LaravelDiffApp/app/Http/Middleware/CheckForMaintenanceMode.php
+@@ -0,0 +1,17 @@
++<?php
++
++namespace App\Http\Middleware;
++
++use Illuminate\Foundation\Http\Middleware\CheckForMaintenanceMode as Middleware;
++
++class CheckForMaintenanceMode extends Middleware
++{
++    /**
++     * The URIs that should be reachable while maintenance mode is enabled.
++     *
++     * @var array
++     */
++    protected $except = [
++        //
++    ];
++}
+diff --git a/LaravelDiffApp/app/Http/Middleware/TrustProxies.php b/LaravelDiffApp/app/Http/Middleware/TrustProxies.php
+index 3ce0214..7daf51f 100644
+--- a/LaravelDiffApp/app/Http/Middleware/TrustProxies.php
++++ b/LaravelDiffApp/app/Http/Middleware/TrustProxies.php
+@@ -17,7 +17,7 @@ class TrustProxies extends Middleware
+     /**
+      * The headers that should be used to detect proxies.
+      *
+-     * @var string
++     * @var int
+      */
+     protected $headers = Request::HEADER_X_FORWARDED_ALL;
+ }
+diff --git a/LaravelDiffApp/composer.json b/LaravelDiffApp/composer.json
+index 27695dc..65bf8b4 100644
+--- a/LaravelDiffApp/composer.json
++++ b/LaravelDiffApp/composer.json
+@@ -5,18 +5,17 @@
+     "license": "MIT",
+     "type": "project",
+     "require": {
+-        "php": ">=7.1.3",
+-        "fideloper/proxy": "~4.0",
++        "php": "^7.1.3",
++        "fideloper/proxy": "^4.0",
+         "laravel/framework": "5.6.*",
+-        "laravel/tinker": "~1.0"
++        "laravel/tinker": "^1.0"
+     },
+     "require-dev": {
+-        "filp/whoops": "~2.0",
+-        "nunomaduro/collision": "~1.1",
+-        "fzaninotto/faker": "~1.4",
+-        "mockery/mockery": "~1.0",
+-        "phpunit/phpunit": "~7.0",
+-        "symfony/thanks": "^1.0"
++        "filp/whoops": "^2.0",
++        "fzaninotto/faker": "^1.4",
++        "mockery/mockery": "^1.0",
++        "nunomaduro/collision": "^2.0",
++        "phpunit/phpunit": "^7.0"
+     },
+     "autoload": {
+         "classmap": [
+diff --git a/LaravelDiffApp/config/filesystems.php b/LaravelDiffApp/config/filesystems.php
+index 67158a5..77fa5de 100644
+--- a/LaravelDiffApp/config/filesystems.php
++++ b/LaravelDiffApp/config/filesystems.php
+@@ -37,7 +37,7 @@ return [
+     | may even configure multiple disks of the same driver. Defaults have
+     | been setup for each driver as an example of the required options.
+     |
+-    | Supported Drivers: "local", "ftp", "s3", "rackspace"
++    | Supported Drivers: "local", "ftp", "sftp", "s3", "rackspace"
+     |
+     */
+ 
+diff --git a/LaravelDiffApp/config/hashing.php b/LaravelDiffApp/config/hashing.php
+index f929cf0..d3c8e2f 100644
+--- a/LaravelDiffApp/config/hashing.php
++++ b/LaravelDiffApp/config/hashing.php
+@@ -17,4 +17,36 @@ return [
+ 
+     'driver' => 'bcrypt',
+ 
++    /*
++    |--------------------------------------------------------------------------
++    | Bcrypt Options
++    |--------------------------------------------------------------------------
++    |
++    | Here you may specify the configuration options that should be used when
++    | passwords are hashed using the Bcrypt algorithm. This will allow you
++    | to control the amount of time it takes to hash the given password.
++    |
++    */
++
++    'bcrypt' => [
++        'rounds' => env('BCRYPT_ROUNDS', 10),
++    ],
++
++    /*
++    |--------------------------------------------------------------------------
++    | Argon Options
++    |--------------------------------------------------------------------------
++    |
++    | Here you may specify the configuration options that should be used when
++    | passwords are hashed using the Argon algorithm. These will allow you
++    | to control the amount of time it takes to hash the given password.
++    |
++    */
++
++    'argon' => [
++        'memory' => 1024,
++        'threads' => 2,
++        'time' => 2,
++    ],
++
+ ];
+diff --git a/LaravelDiffApp/config/logging.php b/LaravelDiffApp/config/logging.php
+index 902efaf..400bc7f 100644
+--- a/LaravelDiffApp/config/logging.php
++++ b/LaravelDiffApp/config/logging.php
+@@ -1,5 +1,7 @@
+ <?php
+ 
++use Monolog\Handler\StreamHandler;
++
+ return [
+ 
+     /*
+@@ -25,7 +27,8 @@ return [
+     | you a variety of powerful log handlers / formatters to utilize.
+     |
+     | Available Drivers: "single", "daily", "slack", "syslog",
+-    |                    "errorlog", "custom", "stack"
++    |                    "errorlog", "monolog",
++    |                    "custom", "stack"
+     |
+     */
+ 
+@@ -56,6 +59,14 @@ return [
+             'level' => 'critical',
+         ],
+ 
++        'stderr' => [
++            'driver' => 'monolog',
++            'handler' => StreamHandler::class,
++            'with' => [
++                'stream' => 'php://stderr',
++            ],
++        ],
++
+         'syslog' => [
+             'driver' => 'syslog',
+             'level' => 'debug',
+diff --git a/LaravelDiffApp/config/queue.php b/LaravelDiffApp/config/queue.php
+index 87b1b1b..391304f 100644
+--- a/LaravelDiffApp/config/queue.php
++++ b/LaravelDiffApp/config/queue.php
+@@ -4,14 +4,12 @@ return [
+ 
+     /*
+     |--------------------------------------------------------------------------
+-    | Default Queue Driver
++    | Default Queue Connection Name
+     |--------------------------------------------------------------------------
+     |
+     | Laravel's queue API supports an assortment of back-ends via a single
+     | API, giving you convenient access to each back-end using the same
+-    | syntax for each one. Here you may set the default queue driver.
+-    |
+-    | Supported: "sync", "database", "beanstalkd", "sqs", "redis", "null"
++    | syntax for every one. Here you may define a default connection.
+     |
+     */
+ 
+@@ -26,6 +24,8 @@ return [
+     | is used by your application. A default configuration has been added
+     | for each back-end shipped with Laravel. You are free to add more.
+     |
++    | Drivers: "sync", "database", "beanstalkd", "sqs", "redis", "null"
++    |
+     */
+ 
+     'connections' => [
+diff --git a/LaravelDiffApp/config/services.php b/LaravelDiffApp/config/services.php
+index 4460f0e..aa1f7f8 100644
+--- a/LaravelDiffApp/config/services.php
++++ b/LaravelDiffApp/config/services.php
+@@ -22,7 +22,7 @@ return [
+     'ses' => [
+         'key' => env('SES_KEY'),
+         'secret' => env('SES_SECRET'),
+-        'region' => 'us-east-1',
++        'region' => env('SES_REGION', 'us-east-1'),
+     ],
+ 
+     'sparkpost' => [
+diff --git a/LaravelDiffApp/database/seeds/DatabaseSeeder.php b/LaravelDiffApp/database/seeds/DatabaseSeeder.php
+index e119db6..91cb6d1 100644
+--- a/LaravelDiffApp/database/seeds/DatabaseSeeder.php
++++ b/LaravelDiffApp/database/seeds/DatabaseSeeder.php
+@@ -5,7 +5,7 @@ use Illuminate\Database\Seeder;
+ class DatabaseSeeder extends Seeder
+ {
+     /**
+-     * Run the database seeds.
++     * Seed the application's database.
+      *
+      * @return void
+      */
+diff --git a/LaravelDiffApp/package.json b/LaravelDiffApp/package.json
+index ecf0bcc..e81ab87 100644
+--- a/LaravelDiffApp/package.json
++++ b/LaravelDiffApp/package.json
+@@ -3,14 +3,14 @@
+     "scripts": {
+         "dev": "npm run development",
+         "development": "cross-env NODE_ENV=development node_modules/webpack/bin/webpack.js --progress --hide-modules --config=node_modules/laravel-mix/setup/webpack.config.js",
+-        "watch": "cross-env NODE_ENV=development node_modules/webpack/bin/webpack.js --watch --progress --hide-modules --config=node_modules/laravel-mix/setup/webpack.config.js",
++        "watch": "npm run development -- --watch",
+         "watch-poll": "npm run watch -- --watch-poll",
+         "hot": "cross-env NODE_ENV=development node_modules/webpack-dev-server/bin/webpack-dev-server.js --inline --hot --config=node_modules/laravel-mix/setup/webpack.config.js",
+         "prod": "npm run production",
+         "production": "cross-env NODE_ENV=production node_modules/webpack/bin/webpack.js --no-progress --hide-modules --config=node_modules/laravel-mix/setup/webpack.config.js"
+     },
+     "devDependencies": {
+-        "axios": "^0.17",
++        "axios": "^0.18",
+         "bootstrap": "^4.0.0",
+         "popper.js": "^1.12",
+         "cross-env": "^5.1",
+diff --git a/LaravelDiffApp/phpunit.xml b/LaravelDiffApp/phpunit.xml
+index bb9c4a7..f564cfb 100644
+--- a/LaravelDiffApp/phpunit.xml
++++ b/LaravelDiffApp/phpunit.xml
+@@ -9,13 +9,13 @@
+          processIsolation="false"
+          stopOnFailure="false">
+     <testsuites>
+-        <testsuite name="Feature">
+-            <directory suffix="Test.php">./tests/Feature</directory>
+-        </testsuite>
+-
+         <testsuite name="Unit">
+             <directory suffix="Test.php">./tests/Unit</directory>
+         </testsuite>
++
++        <testsuite name="Feature">
++            <directory suffix="Test.php">./tests/Feature</directory>
++        </testsuite>
+     </testsuites>
+     <filter>
+         <whitelist processUncoveredFilesFromWhitelist="true">
+@@ -24,8 +24,10 @@
+     </filter>
+     <php>
+         <env name="APP_ENV" value="testing"/>
++        <env name="BCRYPT_ROUNDS" value="4"/>
+         <env name="CACHE_DRIVER" value="array"/>
+         <env name="SESSION_DRIVER" value="array"/>
+         <env name="QUEUE_DRIVER" value="sync"/>
++        <env name="MAIL_DRIVER" value="array"/>
+     </php>
+ </phpunit>
+diff --git a/LaravelDiffApp/readme.md b/LaravelDiffApp/readme.md
+index 5e90f48..b0affd5 100644
+--- a/LaravelDiffApp/readme.md
++++ b/LaravelDiffApp/readme.md
+@@ -34,7 +34,10 @@ We would like to extend our thanks to the following sponsors for helping fund on
+ - **[Vehikl](https://vehikl.com/)**
+ - **[Tighten Co.](https://tighten.co)**
+ - **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
++- **[Cubet Techno Labs](https://cubettech.com)**
+ - **[British Software Development](https://www.britishsoftware.co)**
++- **[Webdock, Fast VPS Hosting](https://www.webdock.io/en)**
++- [UserInsights](https://userinsights.com)
+ - [Fragrantica](https://www.fragrantica.com)
+ - [SOFTonSOFA](https://softonsofa.com/)
+ - [User10](https://user10.com)
+@@ -42,9 +45,12 @@ We would like to extend our thanks to the following sponsors for helping fund on
+ - [CodeBrisk](https://codebrisk.com)
+ - [1Forge](https://1forge.com)
+ - [TECPRESSO](https://tecpresso.co.jp/)
+-- [Pulse Storm](http://www.pulsestorm.net/)
+ - [Runtime Converter](http://runtimeconverter.com/)
+ - [WebL'Agence](https://weblagence.com/)
++- [Invoice Ninja](https://www.invoiceninja.com)
++- [iMi digital](https://www.imi-digital.de/)
++- [Earthlink](https://www.earthlink.ro/)
++- [Steadfast Collective](https://steadfastcollective.com/)
+ 
+ ## Contributing
+ 
+diff --git a/LaravelDiffApp/resources/assets/sass/_variables.scss b/LaravelDiffApp/resources/assets/sass/_variables.scss
+index 1c44aff..6799fc4 100644
+--- a/LaravelDiffApp/resources/assets/sass/_variables.scss
++++ b/LaravelDiffApp/resources/assets/sass/_variables.scss
+@@ -1,18 +1,20 @@
+ 
+ // Body
+-$body-bg: #f5f8fa;
++$body-bg: #f8fafc;
+ 
+ // Typography
+-$font-family-sans-serif: "Raleway", sans-serif;
++$font-family-sans-serif: "Nunito", sans-serif;
+ $font-size-base: 0.9rem;
+ $line-height-base: 1.6;
+-$text-color: #636b6f;
+ 
+-// Navbar
+-$navbar-default-bg: #fff;
+-
+-// Buttons
+-$btn-default-color: $text-color;
+-
+-// Panels
+-$panel-default-heading-bg: #fff;
++// Colors
++$blue: #3490dc;
++$indigo: #6574cd;
++$purple: #9561e2;
++$pink: #f66D9b;
++$red: #e3342f;
++$orange: #f6993f;
++$yellow: #ffed4a;
++$green: #38c172;
++$teal: #4dc0b5;
++$cyan: #6cb2eb;
+diff --git a/LaravelDiffApp/resources/assets/sass/app.scss b/LaravelDiffApp/resources/assets/sass/app.scss
+index 0077cb1..f42e798 100644
+--- a/LaravelDiffApp/resources/assets/sass/app.scss
++++ b/LaravelDiffApp/resources/assets/sass/app.scss
+@@ -1,9 +1,9 @@
+ 
+ // Fonts
+-@import url("https://fonts.googleapis.com/css?family=Raleway:300,400,600");
++@import url('https://fonts.googleapis.com/css?family=Nunito');
+ 
+ // Variables
+-@import "variables";
++@import 'variables';
+ 
+ // Bootstrap
+ @import '~bootstrap/scss/bootstrap';
+diff --git a/LaravelDiffApp/resources/lang/en/validation.php b/LaravelDiffApp/resources/lang/en/validation.php
+index edc036d..b163c42 100644
+--- a/LaravelDiffApp/resources/lang/en/validation.php
++++ b/LaravelDiffApp/resources/lang/en/validation.php
+@@ -18,7 +18,7 @@ return [
+     'after'                => 'The :attribute must be a date after :date.',
+     'after_or_equal'       => 'The :attribute must be a date after or equal to :date.',
+     'alpha'                => 'The :attribute may only contain letters.',
+-    'alpha_dash'           => 'The :attribute may only contain letters, numbers, and dashes.',
++    'alpha_dash'           => 'The :attribute may only contain letters, numbers, dashes and underscores.',
+     'alpha_num'            => 'The :attribute may only contain letters and numbers.',
+     'array'                => 'The :attribute must be an array.',
+     'before'               => 'The :attribute must be a date before :date.',
+@@ -42,6 +42,18 @@ return [
+     'exists'               => 'The selected :attribute is invalid.',
+     'file'                 => 'The :attribute must be a file.',
+     'filled'               => 'The :attribute field must have a value.',
++    'gt'                   => [
++        'numeric' => 'The :attribute must be greater than :value.',
++        'file'    => 'The :attribute must be greater than :value kilobytes.',
++        'string'  => 'The :attribute must be greater than :value characters.',
++        'array'   => 'The :attribute must have more than :value items.',
++    ],
++    'gte'                  => [
++        'numeric' => 'The :attribute must be greater than or equal :value.',
++        'file'    => 'The :attribute must be greater than or equal :value kilobytes.',
++        'string'  => 'The :attribute must be greater than or equal :value characters.',
++        'array'   => 'The :attribute must have :value items or more.',
++    ],
+     'image'                => 'The :attribute must be an image.',
+     'in'                   => 'The selected :attribute is invalid.',
+     'in_array'             => 'The :attribute field does not exist in :other.',
+@@ -50,6 +62,18 @@ return [
+     'ipv4'                 => 'The :attribute must be a valid IPv4 address.',
+     'ipv6'                 => 'The :attribute must be a valid IPv6 address.',
+     'json'                 => 'The :attribute must be a valid JSON string.',
++    'lt'                   => [
++        'numeric' => 'The :attribute must be less than :value.',
++        'file'    => 'The :attribute must be less than :value kilobytes.',
++        'string'  => 'The :attribute must be less than :value characters.',
++        'array'   => 'The :attribute must have less than :value items.',
++    ],
++    'lte'                  => [
++        'numeric' => 'The :attribute must be less than or equal :value.',
++        'file'    => 'The :attribute must be less than or equal :value kilobytes.',
++        'string'  => 'The :attribute must be less than or equal :value characters.',
++        'array'   => 'The :attribute must not have more than :value items.',
++    ],
+     'max'                  => [
+         'numeric' => 'The :attribute may not be greater than :max.',
+         'file'    => 'The :attribute may not be greater than :max kilobytes.',
+@@ -65,6 +89,7 @@ return [
+         'array'   => 'The :attribute must have at least :min items.',
+     ],
+     'not_in'               => 'The selected :attribute is invalid.',
++    'not_regex'            => 'The :attribute format is invalid.',
+     'numeric'              => 'The :attribute must be a number.',
+     'present'              => 'The :attribute field must be present.',
+     'regex'                => 'The :attribute format is invalid.',
+diff --git a/LaravelDiffApp/tests/CreatesApplication.php b/LaravelDiffApp/tests/CreatesApplication.php
+index ff133fb..547152f 100644
+--- a/LaravelDiffApp/tests/CreatesApplication.php
++++ b/LaravelDiffApp/tests/CreatesApplication.php
+@@ -2,7 +2,6 @@
+ 
+ namespace Tests;
+ 
+-use Illuminate\Support\Facades\Hash;
+ use Illuminate\Contracts\Console\Kernel;
+ 
+ trait CreatesApplication
+@@ -18,8 +17,6 @@ trait CreatesApplication
+ 
+         $app->make(Kernel::class)->bootstrap();
+ 
+-        Hash::driver('bcrypt')->setRounds(4);
+-
+         return $app;
+     }
+ }

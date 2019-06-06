@@ -1,0 +1,168 @@
+diff --git a/LaravelDiffApp/.editorconfig b/LaravelDiffApp/.editorconfig
+new file mode 100644
+index 0000000..1492202
+--- /dev/null
++++ b/LaravelDiffApp/.editorconfig
+@@ -0,0 +1,16 @@
++root = true
++
++[*]
++charset = utf-8
++end_of_line = lf
++insert_final_newline = true
++indent_style = space
++indent_size = 4
++trim_trailing_whitespace = true
++
++[*.md]
++trim_trailing_whitespace = false
++
++[*.yml]
++indent_style = space
++indent_size = 2
+diff --git a/LaravelDiffApp/.gitignore b/LaravelDiffApp/.gitignore
+index 67c0aea..7c34e0f 100644
+--- a/LaravelDiffApp/.gitignore
++++ b/LaravelDiffApp/.gitignore
+@@ -11,3 +11,4 @@ Homestead.yaml
+ npm-debug.log
+ yarn-error.log
+ .env
++.phpunit.result.cache
+diff --git a/LaravelDiffApp/app/Http/Kernel.php b/LaravelDiffApp/app/Http/Kernel.php
+index 3439540..fb9616a 100644
+--- a/LaravelDiffApp/app/Http/Kernel.php
++++ b/LaravelDiffApp/app/Http/Kernel.php
+@@ -14,7 +14,7 @@ class Kernel extends HttpKernel
+      * @var array
+      */
+     protected $middleware = [
+-        \Illuminate\Foundation\Http\Middleware\CheckForMaintenanceMode::class,
++        \App\Http\Middleware\CheckForMaintenanceMode::class,
+         \Illuminate\Foundation\Http\Middleware\ValidatePostSize::class,
+         \App\Http\Middleware\TrimStrings::class,
+         \Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull::class,
+diff --git a/LaravelDiffApp/app/Http/Middleware/CheckForMaintenanceMode.php b/LaravelDiffApp/app/Http/Middleware/CheckForMaintenanceMode.php
+new file mode 100644
+index 0000000..35b9824
+--- /dev/null
++++ b/LaravelDiffApp/app/Http/Middleware/CheckForMaintenanceMode.php
+@@ -0,0 +1,17 @@
++<?php
++
++namespace App\Http\Middleware;
++
++use Illuminate\Foundation\Http\Middleware\CheckForMaintenanceMode as Middleware;
++
++class CheckForMaintenanceMode extends Middleware
++{
++    /**
++     * The URIs that should be reachable while maintenance mode is enabled.
++     *
++     * @var array
++     */
++    protected $except = [
++        //
++    ];
++}
+diff --git a/LaravelDiffApp/phpunit.xml b/LaravelDiffApp/phpunit.xml
+index c9e326b..f564cfb 100644
+--- a/LaravelDiffApp/phpunit.xml
++++ b/LaravelDiffApp/phpunit.xml
+@@ -9,13 +9,13 @@
+          processIsolation="false"
+          stopOnFailure="false">
+     <testsuites>
+-        <testsuite name="Feature">
+-            <directory suffix="Test.php">./tests/Feature</directory>
+-        </testsuite>
+-
+         <testsuite name="Unit">
+             <directory suffix="Test.php">./tests/Unit</directory>
+         </testsuite>
++
++        <testsuite name="Feature">
++            <directory suffix="Test.php">./tests/Feature</directory>
++        </testsuite>
+     </testsuites>
+     <filter>
+         <whitelist processUncoveredFilesFromWhitelist="true">
+diff --git a/LaravelDiffApp/readme.md b/LaravelDiffApp/readme.md
+index 8594271..b0affd5 100644
+--- a/LaravelDiffApp/readme.md
++++ b/LaravelDiffApp/readme.md
+@@ -36,6 +36,8 @@ We would like to extend our thanks to the following sponsors for helping fund on
+ - **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
+ - **[Cubet Techno Labs](https://cubettech.com)**
+ - **[British Software Development](https://www.britishsoftware.co)**
++- **[Webdock, Fast VPS Hosting](https://www.webdock.io/en)**
++- [UserInsights](https://userinsights.com)
+ - [Fragrantica](https://www.fragrantica.com)
+ - [SOFTonSOFA](https://softonsofa.com/)
+ - [User10](https://user10.com)
+@@ -46,6 +48,9 @@ We would like to extend our thanks to the following sponsors for helping fund on
+ - [Runtime Converter](http://runtimeconverter.com/)
+ - [WebL'Agence](https://weblagence.com/)
+ - [Invoice Ninja](https://www.invoiceninja.com)
++- [iMi digital](https://www.imi-digital.de/)
++- [Earthlink](https://www.earthlink.ro/)
++- [Steadfast Collective](https://steadfastcollective.com/)
+ 
+ ## Contributing
+ 
+diff --git a/LaravelDiffApp/resources/assets/sass/_variables.scss b/LaravelDiffApp/resources/assets/sass/_variables.scss
+index 70ecfdb..6799fc4 100644
+--- a/LaravelDiffApp/resources/assets/sass/_variables.scss
++++ b/LaravelDiffApp/resources/assets/sass/_variables.scss
+@@ -1,8 +1,20 @@
+ 
+ // Body
+-$body-bg: #f5f8fa;
++$body-bg: #f8fafc;
+ 
+ // Typography
+-$font-family-sans-serif: "Raleway", sans-serif;
++$font-family-sans-serif: "Nunito", sans-serif;
+ $font-size-base: 0.9rem;
+ $line-height-base: 1.6;
++
++// Colors
++$blue: #3490dc;
++$indigo: #6574cd;
++$purple: #9561e2;
++$pink: #f66D9b;
++$red: #e3342f;
++$orange: #f6993f;
++$yellow: #ffed4a;
++$green: #38c172;
++$teal: #4dc0b5;
++$cyan: #6cb2eb;
+diff --git a/LaravelDiffApp/resources/assets/sass/app.scss b/LaravelDiffApp/resources/assets/sass/app.scss
+index 0077cb1..f42e798 100644
+--- a/LaravelDiffApp/resources/assets/sass/app.scss
++++ b/LaravelDiffApp/resources/assets/sass/app.scss
+@@ -1,9 +1,9 @@
+ 
+ // Fonts
+-@import url("https://fonts.googleapis.com/css?family=Raleway:300,400,600");
++@import url('https://fonts.googleapis.com/css?family=Nunito');
+ 
+ // Variables
+-@import "variables";
++@import 'variables';
+ 
+ // Bootstrap
+ @import '~bootstrap/scss/bootstrap';
+diff --git a/LaravelDiffApp/resources/lang/en/validation.php b/LaravelDiffApp/resources/lang/en/validation.php
+index 0d47547..b163c42 100644
+--- a/LaravelDiffApp/resources/lang/en/validation.php
++++ b/LaravelDiffApp/resources/lang/en/validation.php
+@@ -18,7 +18,7 @@ return [
+     'after'                => 'The :attribute must be a date after :date.',
+     'after_or_equal'       => 'The :attribute must be a date after or equal to :date.',
+     'alpha'                => 'The :attribute may only contain letters.',
+-    'alpha_dash'           => 'The :attribute may only contain letters, numbers, and dashes.',
++    'alpha_dash'           => 'The :attribute may only contain letters, numbers, dashes and underscores.',
+     'alpha_num'            => 'The :attribute may only contain letters and numbers.',
+     'array'                => 'The :attribute must be an array.',
+     'before'               => 'The :attribute must be a date before :date.',

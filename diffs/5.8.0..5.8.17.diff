@@ -1,0 +1,325 @@
+diff --git a/LaravelDiffApp/.env.example b/LaravelDiffApp/.env.example
+index 09a4d57..d058c34 100644
+--- a/LaravelDiffApp/.env.example
++++ b/LaravelDiffApp/.env.example
+@@ -32,6 +32,8 @@ MAIL_ENCRYPTION=null
+ 
+ AWS_ACCESS_KEY_ID=
+ AWS_SECRET_ACCESS_KEY=
++AWS_DEFAULT_REGION=us-east-1
++AWS_BUCKET=
+ 
+ PUSHER_APP_ID=
+ PUSHER_APP_KEY=
+diff --git a/LaravelDiffApp/.styleci.yml b/LaravelDiffApp/.styleci.yml
+new file mode 100644
+index 0000000..1db61d9
+--- /dev/null
++++ b/LaravelDiffApp/.styleci.yml
+@@ -0,0 +1,13 @@
++php:
++  preset: laravel
++  disabled:
++    - unused_use
++  finder:
++    not-name:
++      - index.php
++      - server.php
++js:
++  finder:
++    not-name:
++      - webpack.mix.js
++css: true
+diff --git a/LaravelDiffApp/app/Http/Middleware/TrustProxies.php b/LaravelDiffApp/app/Http/Middleware/TrustProxies.php
+index 7daf51f..12fdf8b 100644
+--- a/LaravelDiffApp/app/Http/Middleware/TrustProxies.php
++++ b/LaravelDiffApp/app/Http/Middleware/TrustProxies.php
+@@ -10,7 +10,7 @@ class TrustProxies extends Middleware
+     /**
+      * The trusted proxies for this application.
+      *
+-     * @var array
++     * @var array|string
+      */
+     protected $proxies;
+ 
+diff --git a/LaravelDiffApp/app/Providers/AuthServiceProvider.php b/LaravelDiffApp/app/Providers/AuthServiceProvider.php
+index 9784b1a..0acc984 100644
+--- a/LaravelDiffApp/app/Providers/AuthServiceProvider.php
++++ b/LaravelDiffApp/app/Providers/AuthServiceProvider.php
+@@ -13,7 +13,7 @@ class AuthServiceProvider extends ServiceProvider
+      * @var array
+      */
+     protected $policies = [
+-        'App\Model' => 'App\Policies\ModelPolicy',
++        // 'App\Model' => 'App\Policies\ModelPolicy',
+     ];
+ 
+     /**
+diff --git a/LaravelDiffApp/composer.json b/LaravelDiffApp/composer.json
+index bda4333..8e2b2d7 100644
+--- a/LaravelDiffApp/composer.json
++++ b/LaravelDiffApp/composer.json
+@@ -18,7 +18,7 @@
+         "filp/whoops": "^2.0",
+         "fzaninotto/faker": "^1.4",
+         "mockery/mockery": "^1.0",
+-        "nunomaduro/collision": "^2.0",
++        "nunomaduro/collision": "^3.0",
+         "phpunit/phpunit": "^7.5"
+     },
+     "config": {
+diff --git a/LaravelDiffApp/config/cache.php b/LaravelDiffApp/config/cache.php
+index 4976722..30f0cae 100644
+--- a/LaravelDiffApp/config/cache.php
++++ b/LaravelDiffApp/config/cache.php
+@@ -80,7 +80,7 @@ return [
+             'driver' => 'dynamodb',
+             'key' => env('AWS_ACCESS_KEY_ID'),
+             'secret' => env('AWS_SECRET_ACCESS_KEY'),
+-            'region' => env('AWS_REGION', 'us-east-1'),
++            'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
+             'table' => env('DYNAMODB_CACHE_TABLE', 'cache'),
+         ],
+ 
+diff --git a/LaravelDiffApp/config/database.php b/LaravelDiffApp/config/database.php
+index 77c3184..0cf5445 100644
+--- a/LaravelDiffApp/config/database.php
++++ b/LaravelDiffApp/config/database.php
+@@ -1,5 +1,7 @@
+ <?php
+ 
++use Illuminate\Support\Str;
++
+ return [
+ 
+     /*
+@@ -35,6 +37,7 @@ return [
+ 
+         'sqlite' => [
+             'driver' => 'sqlite',
++            'url' => env('DATABASE_URL'),
+             'database' => env('DB_DATABASE', database_path('database.sqlite')),
+             'prefix' => '',
+             'foreign_key_constraints' => env('DB_FOREIGN_KEYS', true),
+@@ -42,6 +45,7 @@ return [
+ 
+         'mysql' => [
+             'driver' => 'mysql',
++            'url' => env('DATABASE_URL'),
+             'host' => env('DB_HOST', '127.0.0.1'),
+             'port' => env('DB_PORT', '3306'),
+             'database' => env('DB_DATABASE', 'forge'),
+@@ -54,13 +58,14 @@ return [
+             'prefix_indexes' => true,
+             'strict' => true,
+             'engine' => null,
+-            'options' => array_filter([
++            'options' => extension_loaded('pdo_mysql') ? array_filter([
+                 PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
+-            ]),
++            ]) : [],
+         ],
+ 
+         'pgsql' => [
+             'driver' => 'pgsql',
++            'url' => env('DATABASE_URL'),
+             'host' => env('DB_HOST', '127.0.0.1'),
+             'port' => env('DB_PORT', '5432'),
+             'database' => env('DB_DATABASE', 'forge'),
+@@ -75,6 +80,7 @@ return [
+ 
+         'sqlsrv' => [
+             'driver' => 'sqlsrv',
++            'url' => env('DATABASE_URL'),
+             'host' => env('DB_HOST', 'localhost'),
+             'port' => env('DB_PORT', '1433'),
+             'database' => env('DB_DATABASE', 'forge'),
+@@ -117,6 +123,7 @@ return [
+ 
+         'options' => [
+             'cluster' => env('REDIS_CLUSTER', 'predis'),
++            'prefix' => Str::slug(env('APP_NAME', 'laravel'), '_').'_database_',
+         ],
+ 
+         'default' => [
+diff --git a/LaravelDiffApp/config/mail.php b/LaravelDiffApp/config/mail.php
+index f400645..6f8469f 100644
+--- a/LaravelDiffApp/config/mail.php
++++ b/LaravelDiffApp/config/mail.php
+@@ -12,7 +12,7 @@ return [
+     | your application here. By default, Laravel is setup for SMTP mail.
+     |
+     | Supported: "smtp", "sendmail", "mailgun", "mandrill", "ses",
+-    |            "sparkpost", "log", "array"
++    |            "sparkpost", "postmark", "log", "array"
+     |
+     */
+ 
+diff --git a/LaravelDiffApp/config/queue.php b/LaravelDiffApp/config/queue.php
+index ec520ec..07c7d2a 100644
+--- a/LaravelDiffApp/config/queue.php
++++ b/LaravelDiffApp/config/queue.php
+@@ -55,7 +55,7 @@ return [
+             'secret' => env('AWS_SECRET_ACCESS_KEY'),
+             'prefix' => env('SQS_PREFIX', 'https://sqs.us-east-1.amazonaws.com/your-account-id'),
+             'queue' => env('SQS_QUEUE', 'your-queue-name'),
+-            'region' => env('AWS_REGION', 'us-east-1'),
++            'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
+         ],
+ 
+         'redis' => [
+diff --git a/LaravelDiffApp/config/services.php b/LaravelDiffApp/config/services.php
+index e546cbf..f026b2c 100644
+--- a/LaravelDiffApp/config/services.php
++++ b/LaravelDiffApp/config/services.php
+@@ -27,7 +27,7 @@ return [
+     'ses' => [
+         'key' => env('AWS_ACCESS_KEY_ID'),
+         'secret' => env('AWS_SECRET_ACCESS_KEY'),
+-        'region' => env('AWS_REGION', 'us-east-1'),
++        'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
+     ],
+ 
+     'sparkpost' => [
+diff --git a/LaravelDiffApp/database/.gitignore b/LaravelDiffApp/database/.gitignore
+index 9b1dffd..97fc976 100644
+--- a/LaravelDiffApp/database/.gitignore
++++ b/LaravelDiffApp/database/.gitignore
+@@ -1 +1,2 @@
+ *.sqlite
++*.sqlite-journal
+diff --git a/LaravelDiffApp/database/factories/UserFactory.php b/LaravelDiffApp/database/factories/UserFactory.php
+index 2985ea2..5e516ce 100644
+--- a/LaravelDiffApp/database/factories/UserFactory.php
++++ b/LaravelDiffApp/database/factories/UserFactory.php
+@@ -1,5 +1,6 @@
+ <?php
+ 
++/** @var \Illuminate\Database\Eloquent\Factory $factory */
+ use App\User;
+ use Illuminate\Support\Str;
+ use Faker\Generator as Faker;
+diff --git a/LaravelDiffApp/package.json b/LaravelDiffApp/package.json
+index 76bd398..52311d2 100644
+--- a/LaravelDiffApp/package.json
++++ b/LaravelDiffApp/package.json
+@@ -11,7 +11,7 @@
+     },
+     "devDependencies": {
+         "axios": "^0.18",
+-        "bootstrap": "^4.0.0",
++        "bootstrap": "^4.1.0",
+         "cross-env": "^5.1",
+         "jquery": "^3.2",
+         "laravel-mix": "^4.0.7",
+diff --git a/LaravelDiffApp/readme.md b/LaravelDiffApp/readme.md
+index 2cb6913..8b5717e 100644
+--- a/LaravelDiffApp/readme.md
++++ b/LaravelDiffApp/readme.md
+@@ -25,7 +25,7 @@ Laravel is accessible, powerful, and provides tools required for large, robust a
+ 
+ Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+ 
+-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains over 1100 video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost you and your team's skills by digging into our comprehensive video library.
++If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains over 1400 video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+ 
+ ## Laravel Sponsors
+ 
+@@ -57,6 +57,7 @@ We would like to extend our thanks to the following sponsors for funding Laravel
+ - [We Are The Robots Inc.](https://watr.mx/)
+ - [Understand.io](https://www.understand.io/)
+ - [Abdel Elrafa](https://abdelelrafa.com)
++- [Hyper Host](https://hyper.host)
+ 
+ ## Contributing
+ 
+diff --git a/LaravelDiffApp/resources/js/app.js b/LaravelDiffApp/resources/js/app.js
+index 4131ca0..a1efb5c 100644
+--- a/LaravelDiffApp/resources/js/app.js
++++ b/LaravelDiffApp/resources/js/app.js
+@@ -1,4 +1,3 @@
+-
+ /**
+  * First we will load all of this project's JavaScript dependencies which
+  * includes Vue and other libraries. It is a great starting point when
+@@ -29,5 +28,5 @@ Vue.component('example-component', require('./components/ExampleComponent.vue').
+  */
+ 
+ const app = new Vue({
+-    el: '#app'
++    el: '#app',
+ });
+diff --git a/LaravelDiffApp/resources/js/bootstrap.js b/LaravelDiffApp/resources/js/bootstrap.js
+index c1f8ac3..f29bb81 100644
+--- a/LaravelDiffApp/resources/js/bootstrap.js
++++ b/LaravelDiffApp/resources/js/bootstrap.js
+@@ -1,4 +1,3 @@
+-
+ window._ = require('lodash');
+ 
+ /**
+diff --git a/LaravelDiffApp/resources/lang/en/validation.php b/LaravelDiffApp/resources/lang/en/validation.php
+index 8ab929c..e1d879f 100644
+--- a/LaravelDiffApp/resources/lang/en/validation.php
++++ b/LaravelDiffApp/resources/lang/en/validation.php
+@@ -40,6 +40,7 @@ return [
+     'dimensions' => 'The :attribute has invalid image dimensions.',
+     'distinct' => 'The :attribute field has a duplicate value.',
+     'email' => 'The :attribute must be a valid email address.',
++    'ends_with' => 'The :attribute must end with one of the following: :values',
+     'exists' => 'The selected :attribute is invalid.',
+     'file' => 'The :attribute must be a file.',
+     'filled' => 'The :attribute field must have a value.',
+diff --git a/LaravelDiffApp/resources/sass/_variables.scss b/LaravelDiffApp/resources/sass/_variables.scss
+index 6799fc4..0407ab5 100644
+--- a/LaravelDiffApp/resources/sass/_variables.scss
++++ b/LaravelDiffApp/resources/sass/_variables.scss
+@@ -1,9 +1,8 @@
+-
+ // Body
+ $body-bg: #f8fafc;
+ 
+ // Typography
+-$font-family-sans-serif: "Nunito", sans-serif;
++$font-family-sans-serif: 'Nunito', sans-serif;
+ $font-size-base: 0.9rem;
+ $line-height-base: 1.6;
+ 
+@@ -11,7 +10,7 @@ $line-height-base: 1.6;
+ $blue: #3490dc;
+ $indigo: #6574cd;
+ $purple: #9561e2;
+-$pink: #f66D9b;
++$pink: #f66d9b;
+ $red: #e3342f;
+ $orange: #f6993f;
+ $yellow: #ffed4a;
+diff --git a/LaravelDiffApp/resources/sass/app.scss b/LaravelDiffApp/resources/sass/app.scss
+index f42e798..3193ffa 100644
+--- a/LaravelDiffApp/resources/sass/app.scss
++++ b/LaravelDiffApp/resources/sass/app.scss
+@@ -1,4 +1,3 @@
+-
+ // Fonts
+ @import url('https://fonts.googleapis.com/css?family=Nunito');
+ 
+@@ -7,8 +6,3 @@
+ 
+ // Bootstrap
+ @import '~bootstrap/scss/bootstrap';
+-
+-.navbar-laravel {
+-  background-color: #fff;
+-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+-}
+diff --git a/LaravelDiffApp/webpack.mix.js b/LaravelDiffApp/webpack.mix.js
+index 19a48fa..8a923cb 100644
+--- a/LaravelDiffApp/webpack.mix.js
++++ b/LaravelDiffApp/webpack.mix.js
+@@ -12,4 +12,4 @@ const mix = require('laravel-mix');
+  */
+ 
+ mix.js('resources/js/app.js', 'public/js')
+-   .sass('resources/sass/app.scss', 'public/css');
++    .sass('resources/sass/app.scss', 'public/css');

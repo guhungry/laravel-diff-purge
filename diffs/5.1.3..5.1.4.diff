@@ -1,0 +1,80 @@
+diff --git a/LaravelDiffApp/app/Http/Controllers/Auth/AuthController.php b/LaravelDiffApp/app/Http/Controllers/Auth/AuthController.php
+index df32bfc..c0ad3b8 100644
+--- a/LaravelDiffApp/app/Http/Controllers/Auth/AuthController.php
++++ b/LaravelDiffApp/app/Http/Controllers/Auth/AuthController.php
+@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
+ use App\User;
+ use Validator;
+ use App\Http\Controllers\Controller;
++use Illuminate\Foundation\Auth\ThrottlesLogins;
+ use Illuminate\Foundation\Auth\AuthenticatesAndRegistersUsers;
+ 
+ class AuthController extends Controller
+@@ -20,7 +21,7 @@ class AuthController extends Controller
+     |
+     */
+ 
+-    use AuthenticatesAndRegistersUsers;
++    use AuthenticatesAndRegistersUsers, ThrottlesLogins;
+ 
+     /**
+      * Create a new authentication controller instance.
+diff --git a/LaravelDiffApp/gulpfile.js b/LaravelDiffApp/gulpfile.js
+index 483f6d3..dc6f1eb 100644
+--- a/LaravelDiffApp/gulpfile.js
++++ b/LaravelDiffApp/gulpfile.js
+@@ -6,7 +6,7 @@ var elixir = require('laravel-elixir');
+  |--------------------------------------------------------------------------
+  |
+  | Elixir provides a clean, fluent API for defining some basic Gulp tasks
+- | for your Laravel application. By default, we are compiling the Less
++ | for your Laravel application. By default, we are compiling the Sass
+  | file for our application, as well as publishing vendor resources.
+  |
+  */
+diff --git a/LaravelDiffApp/public/.htaccess b/LaravelDiffApp/public/.htaccess
+index 77827ae..8eb2dd0 100644
+--- a/LaravelDiffApp/public/.htaccess
++++ b/LaravelDiffApp/public/.htaccess
+@@ -5,7 +5,8 @@
+ 
+     RewriteEngine On
+ 
+-    # Redirect Trailing Slashes...
++    # Redirect Trailing Slashes If Not A Folder...
++    RewriteCond %{REQUEST_FILENAME} !-d
+     RewriteRule ^(.*)/$ /$1 [L,R=301]
+ 
+     # Handle Front Controller...
+diff --git a/LaravelDiffApp/resources/views/welcome.blade.php b/LaravelDiffApp/resources/views/welcome.blade.php
+index 301e58c..cb5d353 100644
+--- a/LaravelDiffApp/resources/views/welcome.blade.php
++++ b/LaravelDiffApp/resources/views/welcome.blade.php
+@@ -14,7 +14,6 @@
+                 margin: 0;
+                 padding: 0;
+                 width: 100%;
+-                color: #B0BEC5;
+                 display: table;
+                 font-weight: 100;
+                 font-family: 'Lato';
+@@ -33,11 +32,6 @@
+ 
+             .title {
+                 font-size: 96px;
+-                margin-bottom: 40px;
+-            }
+-
+-            .quote {
+-                font-size: 24px;
+             }
+         </style>
+     </head>
+@@ -45,7 +39,6 @@
+         <div class="container">
+             <div class="content">
+                 <div class="title">Laravel 5</div>
+-                <div class="quote">{{ Inspiring::quote() }}</div>
+             </div>
+         </div>
+     </body>

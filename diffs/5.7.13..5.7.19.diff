@@ -1,0 +1,262 @@
+diff --git a/LaravelDiffApp/.gitignore b/LaravelDiffApp/.gitignore
+index 169c5ee..59e8f45 100644
+--- a/LaravelDiffApp/.gitignore
++++ b/LaravelDiffApp/.gitignore
+@@ -3,13 +3,9 @@
+ /public/storage
+ /storage/*.key
+ /vendor
+-/.idea
+-/.vscode
+-/nbproject
+-/.vagrant
++.env
++.phpunit.result.cache
+ Homestead.json
+ Homestead.yaml
+ npm-debug.log
+ yarn-error.log
+-.env
+-.phpunit.result.cache
+diff --git a/LaravelDiffApp/app/Http/Kernel.php b/LaravelDiffApp/app/Http/Kernel.php
+index 9491962..a3d8c48 100644
+--- a/LaravelDiffApp/app/Http/Kernel.php
++++ b/LaravelDiffApp/app/Http/Kernel.php
+@@ -65,7 +65,7 @@ class Kernel extends HttpKernel
+     /**
+      * The priority-sorted list of middleware.
+      *
+-     * This forces the listed middleware to always be in the given order.
++     * This forces non-global middleware to always be in the given order.
+      *
+      * @var array
+      */
+diff --git a/LaravelDiffApp/bootstrap/app.php b/LaravelDiffApp/bootstrap/app.php
+index c65a860..037e17d 100644
+--- a/LaravelDiffApp/bootstrap/app.php
++++ b/LaravelDiffApp/bootstrap/app.php
+@@ -12,7 +12,7 @@
+ */
+ 
+ $app = new Illuminate\Foundation\Application(
+-    dirname(__DIR__)
++    $_ENV['APP_BASE_PATH'] ?? dirname(__DIR__)
+ );
+ 
+ /*
+diff --git a/LaravelDiffApp/composer.json b/LaravelDiffApp/composer.json
+index f587e08..b473a9b 100644
+--- a/LaravelDiffApp/composer.json
++++ b/LaravelDiffApp/composer.json
+@@ -1,9 +1,12 @@
+ {
+     "name": "laravel/laravel",
++    "type": "project",
+     "description": "The Laravel Framework.",
+-    "keywords": ["framework", "laravel"],
++    "keywords": [
++        "framework",
++        "laravel"
++    ],
+     "license": "MIT",
+-    "type": "project",
+     "require": {
+         "php": "^7.1.3",
+         "fideloper/proxy": "^4.0",
+@@ -18,43 +21,42 @@
+         "nunomaduro/collision": "^2.0",
+         "phpunit/phpunit": "^7.0"
+     },
++    "config": {
++        "optimize-autoloader": true,
++        "preferred-install": "dist",
++        "sort-packages": true
++    },
++    "extra": {
++        "laravel": {
++            "dont-discover": []
++        }
++    },
+     "autoload": {
++        "psr-4": {
++            "App\\": "app/"
++        },
+         "classmap": [
+             "database/seeds",
+             "database/factories"
+-        ],
+-        "psr-4": {
+-            "App\\": "app/"
+-        }
++        ]
+     },
+     "autoload-dev": {
+         "psr-4": {
+             "Tests\\": "tests/"
+         }
+     },
+-    "extra": {
+-        "laravel": {
+-            "dont-discover": [
+-            ]
+-        }
+-    },
++    "minimum-stability": "dev",
++    "prefer-stable": true,
+     "scripts": {
++        "post-autoload-dump": [
++            "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
++            "@php artisan package:discover --ansi"
++        ],
+         "post-root-package-install": [
+             "@php -r \"file_exists('.env') || copy('.env.example', '.env');\""
+         ],
+         "post-create-project-cmd": [
+             "@php artisan key:generate --ansi"
+-        ],
+-        "post-autoload-dump": [
+-            "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
+-            "@php artisan package:discover --ansi"
+         ]
+-    },
+-    "config": {
+-        "preferred-install": "dist",
+-        "sort-packages": true,
+-        "optimize-autoloader": true
+-    },
+-    "minimum-stability": "dev",
+-    "prefer-stable": true
++    }
+ }
+diff --git a/LaravelDiffApp/config/app.php b/LaravelDiffApp/config/app.php
+index 01081dc..57ee5b7 100644
+--- a/LaravelDiffApp/config/app.php
++++ b/LaravelDiffApp/config/app.php
+@@ -54,6 +54,8 @@ return [
+ 
+     'url' => env('APP_URL', 'http://localhost'),
+ 
++    'asset_url' => env('ASSET_URL', null),
++
+     /*
+     |--------------------------------------------------------------------------
+     | Application Timezone
+diff --git a/LaravelDiffApp/config/logging.php b/LaravelDiffApp/config/logging.php
+index 506f2f3..4b9cbff 100644
+--- a/LaravelDiffApp/config/logging.php
++++ b/LaravelDiffApp/config/logging.php
+@@ -73,6 +73,7 @@ return [
+         'stderr' => [
+             'driver' => 'monolog',
+             'handler' => StreamHandler::class,
++            'formatter' => env('LOG_STDERR_FORMATTER'),
+             'with' => [
+                 'stream' => 'php://stderr',
+             ],
+diff --git a/LaravelDiffApp/config/mail.php b/LaravelDiffApp/config/mail.php
+index bb92224..f400645 100644
+--- a/LaravelDiffApp/config/mail.php
++++ b/LaravelDiffApp/config/mail.php
+@@ -120,4 +120,17 @@ return [
+         ],
+     ],
+ 
++    /*
++    |--------------------------------------------------------------------------
++    | Log Channel
++    |--------------------------------------------------------------------------
++    |
++    | If you are using the "log" driver, you may specify the logging channel
++    | if you prefer to keep mail messages separate from other log entries
++    | for simpler reading. Otherwise, the default channel will be used.
++    |
++    */
++
++    'log_channel' => env('MAIL_LOG_CHANNEL'),
++
+ ];
+diff --git a/LaravelDiffApp/config/view.php b/LaravelDiffApp/config/view.php
+index 2acfd9c..22b8a18 100644
+--- a/LaravelDiffApp/config/view.php
++++ b/LaravelDiffApp/config/view.php
+@@ -28,6 +28,9 @@ return [
+     |
+     */
+ 
+-    'compiled' => realpath(storage_path('framework/views')),
++    'compiled' => env(
++        'VIEW_COMPILED_PATH',
++        realpath(storage_path('framework/views'))
++    ),
+ 
+ ];
+diff --git a/LaravelDiffApp/package.json b/LaravelDiffApp/package.json
+index cb2f688..76bd398 100644
+--- a/LaravelDiffApp/package.json
++++ b/LaravelDiffApp/package.json
+@@ -14,9 +14,12 @@
+         "bootstrap": "^4.0.0",
+         "cross-env": "^5.1",
+         "jquery": "^3.2",
+-        "laravel-mix": "^2.0",
++        "laravel-mix": "^4.0.7",
+         "lodash": "^4.17.5",
+         "popper.js": "^1.12",
++        "resolve-url-loader": "^2.3.1",
++        "sass": "^1.15.2",
++        "sass-loader": "^7.1.0",
+         "vue": "^2.5.17"
+     }
+ }
+diff --git a/LaravelDiffApp/readme.md b/LaravelDiffApp/readme.md
+index 98a3e64..736a2ad 100644
+--- a/LaravelDiffApp/readme.md
++++ b/LaravelDiffApp/readme.md
+@@ -38,6 +38,7 @@ We would like to extend our thanks to the following sponsors for helping fund on
+ - **[Cubet Techno Labs](https://cubettech.com)**
+ - **[British Software Development](https://www.britishsoftware.co)**
+ - **[Webdock, Fast VPS Hosting](https://www.webdock.io/en)**
++- **[DevSquad](https://devsquad.com)**
+ - [UserInsights](https://userinsights.com)
+ - [Fragrantica](https://www.fragrantica.com)
+ - [SOFTonSOFA](https://softonsofa.com/)
+diff --git a/LaravelDiffApp/resources/js/app.js b/LaravelDiffApp/resources/js/app.js
+index 543dd59..32d79b4 100644
+--- a/LaravelDiffApp/resources/js/app.js
++++ b/LaravelDiffApp/resources/js/app.js
+@@ -17,13 +17,10 @@ window.Vue = require('vue');
+  * Eg. ./components/ExampleComponent.vue -> <example-component></example-component>
+  */
+ 
+-Vue.component('example-component', require('./components/ExampleComponent.vue'));
+-
+ // const files = require.context('./', true, /\.vue$/i)
++// files.keys().map(key => Vue.component(key.split('/').pop().split('.')[0], files(key).default))
+ 
+-// files.keys().map(key => {
+-//     return Vue.component(_.last(key.split('/')).split('.')[0], files(key))
+-// })
++Vue.component('example-component', require('./components/ExampleComponent.vue').default);
+ 
+ /**
+  * Next, we will create a fresh Vue application instance and attach it to
+diff --git a/LaravelDiffApp/resources/lang/en/validation.php b/LaravelDiffApp/resources/lang/en/validation.php
+index 35e5e88..8ab929c 100644
+--- a/LaravelDiffApp/resources/lang/en/validation.php
++++ b/LaravelDiffApp/resources/lang/en/validation.php
+@@ -32,6 +32,7 @@ return [
+     'boolean' => 'The :attribute field must be true or false.',
+     'confirmed' => 'The :attribute confirmation does not match.',
+     'date' => 'The :attribute is not a valid date.',
++    'date_equals' => 'The :attribute must be a date equal to :date.',
+     'date_format' => 'The :attribute does not match the format :format.',
+     'different' => 'The :attribute and :other must be different.',
+     'digits' => 'The :attribute must be :digits digits.',
+@@ -107,6 +108,7 @@ return [
+         'string' => 'The :attribute must be :size characters.',
+         'array' => 'The :attribute must contain :size items.',
+     ],
++    'starts_with' => 'The :attribute must start with one of the following: :values',
+     'string' => 'The :attribute must be a string.',
+     'timezone' => 'The :attribute must be a valid zone.',
+     'unique' => 'The :attribute has already been taken.',

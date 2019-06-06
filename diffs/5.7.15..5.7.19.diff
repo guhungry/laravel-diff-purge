@@ -1,0 +1,80 @@
+diff --git a/LaravelDiffApp/.gitignore b/LaravelDiffApp/.gitignore
+index 169c5ee..59e8f45 100644
+--- a/LaravelDiffApp/.gitignore
++++ b/LaravelDiffApp/.gitignore
+@@ -3,13 +3,9 @@
+ /public/storage
+ /storage/*.key
+ /vendor
+-/.idea
+-/.vscode
+-/nbproject
+-/.vagrant
++.env
++.phpunit.result.cache
+ Homestead.json
+ Homestead.yaml
+ npm-debug.log
+ yarn-error.log
+-.env
+-.phpunit.result.cache
+diff --git a/LaravelDiffApp/config/logging.php b/LaravelDiffApp/config/logging.php
+index 506f2f3..4b9cbff 100644
+--- a/LaravelDiffApp/config/logging.php
++++ b/LaravelDiffApp/config/logging.php
+@@ -73,6 +73,7 @@ return [
+         'stderr' => [
+             'driver' => 'monolog',
+             'handler' => StreamHandler::class,
++            'formatter' => env('LOG_STDERR_FORMATTER'),
+             'with' => [
+                 'stream' => 'php://stderr',
+             ],
+diff --git a/LaravelDiffApp/package.json b/LaravelDiffApp/package.json
+index cb2f688..76bd398 100644
+--- a/LaravelDiffApp/package.json
++++ b/LaravelDiffApp/package.json
+@@ -14,9 +14,12 @@
+         "bootstrap": "^4.0.0",
+         "cross-env": "^5.1",
+         "jquery": "^3.2",
+-        "laravel-mix": "^2.0",
++        "laravel-mix": "^4.0.7",
+         "lodash": "^4.17.5",
+         "popper.js": "^1.12",
++        "resolve-url-loader": "^2.3.1",
++        "sass": "^1.15.2",
++        "sass-loader": "^7.1.0",
+         "vue": "^2.5.17"
+     }
+ }
+diff --git a/LaravelDiffApp/resources/js/app.js b/LaravelDiffApp/resources/js/app.js
+index 24b5dbf..32d79b4 100644
+--- a/LaravelDiffApp/resources/js/app.js
++++ b/LaravelDiffApp/resources/js/app.js
+@@ -17,10 +17,10 @@ window.Vue = require('vue');
+  * Eg. ./components/ExampleComponent.vue -> <example-component></example-component>
+  */
+ 
+-Vue.component('example-component', require('./components/ExampleComponent.vue'));
+-
+ // const files = require.context('./', true, /\.vue$/i)
+-// files.keys().map(key => Vue.component(key.split('/').pop().split('.')[0], files(key)))
++// files.keys().map(key => Vue.component(key.split('/').pop().split('.')[0], files(key).default))
++
++Vue.component('example-component', require('./components/ExampleComponent.vue').default);
+ 
+ /**
+  * Next, we will create a fresh Vue application instance and attach it to
+diff --git a/LaravelDiffApp/resources/lang/en/validation.php b/LaravelDiffApp/resources/lang/en/validation.php
+index 6c4571c..8ab929c 100644
+--- a/LaravelDiffApp/resources/lang/en/validation.php
++++ b/LaravelDiffApp/resources/lang/en/validation.php
+@@ -108,6 +108,7 @@ return [
+         'string' => 'The :attribute must be :size characters.',
+         'array' => 'The :attribute must contain :size items.',
+     ],
++    'starts_with' => 'The :attribute must start with one of the following: :values',
+     'string' => 'The :attribute must be a string.',
+     'timezone' => 'The :attribute must be a valid zone.',
+     'unique' => 'The :attribute has already been taken.',

@@ -1,0 +1,2992 @@
+diff --git a/LaravelDiffApp/.env.example b/LaravelDiffApp/.env.example
+index 8eb8f57..668c06f 100644
+--- a/LaravelDiffApp/.env.example
++++ b/LaravelDiffApp/.env.example
+@@ -1,19 +1,33 @@
++APP_NAME=Laravel
+ APP_ENV=local
++APP_KEY=
+ APP_DEBUG=true
+-APP_KEY=SomeRandomString
++APP_LOG_LEVEL=debug
++APP_URL=http://localhost
+ 
+-DB_HOST=localhost
++DB_CONNECTION=mysql
++DB_HOST=127.0.0.1
++DB_PORT=3306
+ DB_DATABASE=homestead
+ DB_USERNAME=homestead
+ DB_PASSWORD=secret
+ 
++BROADCAST_DRIVER=log
+ CACHE_DRIVER=file
+ SESSION_DRIVER=file
+ QUEUE_DRIVER=sync
+ 
++REDIS_HOST=127.0.0.1
++REDIS_PASSWORD=null
++REDIS_PORT=6379
++
+ MAIL_DRIVER=smtp
+-MAIL_HOST=mailtrap.io
++MAIL_HOST=smtp.mailtrap.io
+ MAIL_PORT=2525
+ MAIL_USERNAME=null
+ MAIL_PASSWORD=null
+ MAIL_ENCRYPTION=null
++
++PUSHER_APP_ID=
++PUSHER_APP_KEY=
++PUSHER_APP_SECRET=
+diff --git a/LaravelDiffApp/.gitattributes b/LaravelDiffApp/.gitattributes
+index 95883de..967315d 100644
+--- a/LaravelDiffApp/.gitattributes
++++ b/LaravelDiffApp/.gitattributes
+@@ -1,3 +1,5 @@
+ * text=auto
+ *.css linguist-vendored
+-*.less linguist-vendored
++*.scss linguist-vendored
++*.js linguist-vendored
++CHANGELOG.md export-ignore
+diff --git a/LaravelDiffApp/.gitignore b/LaravelDiffApp/.gitignore
+index 2ff24d0..b6a4b86 100644
+--- a/LaravelDiffApp/.gitignore
++++ b/LaravelDiffApp/.gitignore
+@@ -1,5 +1,12 @@
+-/vendor
+ /node_modules
+-Homestead.yaml
++/public/hot
++/public/storage
++/storage/*.key
++/vendor
++/.idea
++/.vagrant
+ Homestead.json
++Homestead.yaml
++npm-debug.log
++yarn-error.log
+ .env
+diff --git a/LaravelDiffApp/app/Console/Commands/Inspire.php b/LaravelDiffApp/app/Console/Commands/Inspire.php
+deleted file mode 100644
+index db9ab85..0000000
+--- a/LaravelDiffApp/app/Console/Commands/Inspire.php
++++ /dev/null
+@@ -1,33 +0,0 @@
+-<?php
+-
+-namespace App\Console\Commands;
+-
+-use Illuminate\Console\Command;
+-use Illuminate\Foundation\Inspiring;
+-
+-class Inspire extends Command
+-{
+-    /**
+-     * The name and signature of the console command.
+-     *
+-     * @var string
+-     */
+-    protected $signature = 'inspire';
+-
+-    /**
+-     * The console command description.
+-     *
+-     * @var string
+-     */
+-    protected $description = 'Display an inspiring quote';
+-
+-    /**
+-     * Execute the console command.
+-     *
+-     * @return mixed
+-     */
+-    public function handle()
+-    {
+-        $this->comment(PHP_EOL.Inspiring::quote().PHP_EOL);
+-    }
+-}
+diff --git a/LaravelDiffApp/app/Console/Kernel.php b/LaravelDiffApp/app/Console/Kernel.php
+index 0aad259..622e774 100644
+--- a/LaravelDiffApp/app/Console/Kernel.php
++++ b/LaravelDiffApp/app/Console/Kernel.php
+@@ -13,7 +13,7 @@ class Kernel extends ConsoleKernel
+      * @var array
+      */
+     protected $commands = [
+-        \App\Console\Commands\Inspire::class,
++        //
+     ];
+ 
+     /**
+@@ -24,7 +24,17 @@ class Kernel extends ConsoleKernel
+      */
+     protected function schedule(Schedule $schedule)
+     {
+-        $schedule->command('inspire')
+-                 ->hourly();
++        // $schedule->command('inspire')
++        //          ->hourly();
++    }
++
++    /**
++     * Register the Closure based commands for the application.
++     *
++     * @return void
++     */
++    protected function commands()
++    {
++        require base_path('routes/console.php');
+     }
+ }
+diff --git a/LaravelDiffApp/app/Events/Event.php b/LaravelDiffApp/app/Events/Event.php
+deleted file mode 100644
+index ba2f888..0000000
+--- a/LaravelDiffApp/app/Events/Event.php
++++ /dev/null
+@@ -1,8 +0,0 @@
+-<?php
+-
+-namespace App\Events;
+-
+-abstract class Event
+-{
+-    //
+-}
+diff --git a/LaravelDiffApp/app/Exceptions/Handler.php b/LaravelDiffApp/app/Exceptions/Handler.php
+index 3dabc68..a747e31 100644
+--- a/LaravelDiffApp/app/Exceptions/Handler.php
++++ b/LaravelDiffApp/app/Exceptions/Handler.php
+@@ -3,9 +3,7 @@
+ namespace App\Exceptions;
+ 
+ use Exception;
+-use Illuminate\Database\Eloquent\ModelNotFoundException;
+-use Symfony\Component\HttpKernel\Exception\HttpException;
+-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
++use Illuminate\Auth\AuthenticationException;
+ use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
+ 
+ class Handler extends ExceptionHandler
+@@ -16,8 +14,12 @@ class Handler extends ExceptionHandler
+      * @var array
+      */
+     protected $dontReport = [
+-        HttpException::class,
+-        ModelNotFoundException::class,
++        \Illuminate\Auth\AuthenticationException::class,
++        \Illuminate\Auth\Access\AuthorizationException::class,
++        \Symfony\Component\HttpKernel\Exception\HttpException::class,
++        \Illuminate\Database\Eloquent\ModelNotFoundException::class,
++        \Illuminate\Session\TokenMismatchException::class,
++        \Illuminate\Validation\ValidationException::class,
+     ];
+ 
+     /**
+@@ -25,27 +27,39 @@ class Handler extends ExceptionHandler
+      *
+      * This is a great spot to send exceptions to Sentry, Bugsnag, etc.
+      *
+-     * @param  \Exception  $e
++     * @param  \Exception  $exception
+      * @return void
+      */
+-    public function report(Exception $e)
++    public function report(Exception $exception)
+     {
+-        return parent::report($e);
++        parent::report($exception);
+     }
+ 
+     /**
+      * Render an exception into an HTTP response.
+      *
+      * @param  \Illuminate\Http\Request  $request
+-     * @param  \Exception  $e
++     * @param  \Exception  $exception
+      * @return \Illuminate\Http\Response
+      */
+-    public function render($request, Exception $e)
++    public function render($request, Exception $exception)
+     {
+-        if ($e instanceof ModelNotFoundException) {
+-            $e = new NotFoundHttpException($e->getMessage(), $e);
++        return parent::render($request, $exception);
++    }
++
++    /**
++     * Convert an authentication exception into an unauthenticated response.
++     *
++     * @param  \Illuminate\Http\Request  $request
++     * @param  \Illuminate\Auth\AuthenticationException  $exception
++     * @return \Illuminate\Http\Response
++     */
++    protected function unauthenticated($request, AuthenticationException $exception)
++    {
++        if ($request->expectsJson()) {
++            return response()->json(['error' => 'Unauthenticated.'], 401);
+         }
+ 
+-        return parent::render($request, $e);
++        return redirect()->guest(route('login'));
+     }
+ }
+diff --git a/LaravelDiffApp/app/Http/Controllers/Auth/ForgotPasswordController.php b/LaravelDiffApp/app/Http/Controllers/Auth/ForgotPasswordController.php
+new file mode 100644
+index 0000000..6a247fe
+--- /dev/null
++++ b/LaravelDiffApp/app/Http/Controllers/Auth/ForgotPasswordController.php
+@@ -0,0 +1,32 @@
++<?php
++
++namespace App\Http\Controllers\Auth;
++
++use App\Http\Controllers\Controller;
++use Illuminate\Foundation\Auth\SendsPasswordResetEmails;
++
++class ForgotPasswordController extends Controller
++{
++    /*
++    |--------------------------------------------------------------------------
++    | Password Reset Controller
++    |--------------------------------------------------------------------------
++    |
++    | This controller is responsible for handling password reset emails and
++    | includes a trait which assists in sending these notifications from
++    | your application to your users. Feel free to explore this trait.
++    |
++    */
++
++    use SendsPasswordResetEmails;
++
++    /**
++     * Create a new controller instance.
++     *
++     * @return void
++     */
++    public function __construct()
++    {
++        $this->middleware('guest');
++    }
++}
+diff --git a/LaravelDiffApp/app/Http/Controllers/Auth/LoginController.php b/LaravelDiffApp/app/Http/Controllers/Auth/LoginController.php
+new file mode 100644
+index 0000000..b2ea669
+--- /dev/null
++++ b/LaravelDiffApp/app/Http/Controllers/Auth/LoginController.php
+@@ -0,0 +1,39 @@
++<?php
++
++namespace App\Http\Controllers\Auth;
++
++use App\Http\Controllers\Controller;
++use Illuminate\Foundation\Auth\AuthenticatesUsers;
++
++class LoginController extends Controller
++{
++    /*
++    |--------------------------------------------------------------------------
++    | Login Controller
++    |--------------------------------------------------------------------------
++    |
++    | This controller handles authenticating users for the application and
++    | redirecting them to your home screen. The controller uses a trait
++    | to conveniently provide its functionality to your applications.
++    |
++    */
++
++    use AuthenticatesUsers;
++
++    /**
++     * Where to redirect users after login.
++     *
++     * @var string
++     */
++    protected $redirectTo = '/home';
++
++    /**
++     * Create a new controller instance.
++     *
++     * @return void
++     */
++    public function __construct()
++    {
++        $this->middleware('guest')->except('logout');
++    }
++}
+diff --git a/LaravelDiffApp/app/Http/Controllers/Auth/AuthController.php b/LaravelDiffApp/app/Http/Controllers/Auth/RegisterController.php
+similarity index 54%
+rename from LaravelDiffApp/app/Http/Controllers/Auth/AuthController.php
+rename to LaravelDiffApp/app/Http/Controllers/Auth/RegisterController.php
+index c0ad3b8..f77265a 100644
+--- a/LaravelDiffApp/app/Http/Controllers/Auth/AuthController.php
++++ b/LaravelDiffApp/app/Http/Controllers/Auth/RegisterController.php
+@@ -3,34 +3,40 @@
+ namespace App\Http\Controllers\Auth;
+ 
+ use App\User;
+-use Validator;
+ use App\Http\Controllers\Controller;
+-use Illuminate\Foundation\Auth\ThrottlesLogins;
+-use Illuminate\Foundation\Auth\AuthenticatesAndRegistersUsers;
++use Illuminate\Support\Facades\Validator;
++use Illuminate\Foundation\Auth\RegistersUsers;
+ 
+-class AuthController extends Controller
++class RegisterController extends Controller
+ {
+     /*
+     |--------------------------------------------------------------------------
+-    | Registration & Login Controller
++    | Register Controller
+     |--------------------------------------------------------------------------
+     |
+-    | This controller handles the registration of new users, as well as the
+-    | authentication of existing users. By default, this controller uses
+-    | a simple trait to add these behaviors. Why don't you explore it?
++    | This controller handles the registration of new users as well as their
++    | validation and creation. By default this controller uses a trait to
++    | provide this functionality without requiring any additional code.
+     |
+     */
+ 
+-    use AuthenticatesAndRegistersUsers, ThrottlesLogins;
++    use RegistersUsers;
+ 
+     /**
+-     * Create a new authentication controller instance.
++     * Where to redirect users after registration.
++     *
++     * @var string
++     */
++    protected $redirectTo = '/home';
++
++    /**
++     * Create a new controller instance.
+      *
+      * @return void
+      */
+     public function __construct()
+     {
+-        $this->middleware('guest', ['except' => 'getLogout']);
++        $this->middleware('guest');
+     }
+ 
+     /**
+@@ -42,9 +48,9 @@ class AuthController extends Controller
+     protected function validator(array $data)
+     {
+         return Validator::make($data, [
+-            'name' => 'required|max:255',
+-            'email' => 'required|email|max:255|unique:users',
+-            'password' => 'required|confirmed|min:6',
++            'name' => 'required|string|max:255',
++            'email' => 'required|string|email|max:255|unique:users',
++            'password' => 'required|string|min:6|confirmed',
+         ]);
+     }
+ 
+@@ -52,7 +58,7 @@ class AuthController extends Controller
+      * Create a new user instance after a valid registration.
+      *
+      * @param  array  $data
+-     * @return User
++     * @return \App\User
+      */
+     protected function create(array $data)
+     {
+diff --git a/LaravelDiffApp/app/Http/Controllers/Auth/PasswordController.php b/LaravelDiffApp/app/Http/Controllers/Auth/ResetPasswordController.php
+similarity index 75%
+rename from LaravelDiffApp/app/Http/Controllers/Auth/PasswordController.php
+rename to LaravelDiffApp/app/Http/Controllers/Auth/ResetPasswordController.php
+index 1ceed97..cf726ee 100644
+--- a/LaravelDiffApp/app/Http/Controllers/Auth/PasswordController.php
++++ b/LaravelDiffApp/app/Http/Controllers/Auth/ResetPasswordController.php
+@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Auth;
+ use App\Http\Controllers\Controller;
+ use Illuminate\Foundation\Auth\ResetsPasswords;
+ 
+-class PasswordController extends Controller
++class ResetPasswordController extends Controller
+ {
+     /*
+     |--------------------------------------------------------------------------
+@@ -21,7 +21,14 @@ class PasswordController extends Controller
+     use ResetsPasswords;
+ 
+     /**
+-     * Create a new password controller instance.
++     * Where to redirect users after resetting their password.
++     *
++     * @var string
++     */
++    protected $redirectTo = '/home';
++
++    /**
++     * Create a new controller instance.
+      *
+      * @return void
+      */
+diff --git a/LaravelDiffApp/app/Http/Controllers/Controller.php b/LaravelDiffApp/app/Http/Controllers/Controller.php
+index 4eb37d5..03e02a2 100644
+--- a/LaravelDiffApp/app/Http/Controllers/Controller.php
++++ b/LaravelDiffApp/app/Http/Controllers/Controller.php
+@@ -7,7 +7,7 @@ use Illuminate\Routing\Controller as BaseController;
+ use Illuminate\Foundation\Validation\ValidatesRequests;
+ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+ 
+-abstract class Controller extends BaseController
++class Controller extends BaseController
+ {
+     use AuthorizesRequests, DispatchesJobs, ValidatesRequests;
+ }
+diff --git a/LaravelDiffApp/app/Http/Kernel.php b/LaravelDiffApp/app/Http/Kernel.php
+index ceea60a..66d34c3 100644
+--- a/LaravelDiffApp/app/Http/Kernel.php
++++ b/LaravelDiffApp/app/Http/Kernel.php
+@@ -9,25 +9,52 @@ class Kernel extends HttpKernel
+     /**
+      * The application's global HTTP middleware stack.
+      *
++     * These middleware are run during every request to your application.
++     *
+      * @var array
+      */
+     protected $middleware = [
+         \Illuminate\Foundation\Http\Middleware\CheckForMaintenanceMode::class,
+-        \App\Http\Middleware\EncryptCookies::class,
+-        \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
+-        \Illuminate\Session\Middleware\StartSession::class,
+-        \Illuminate\View\Middleware\ShareErrorsFromSession::class,
+-        \App\Http\Middleware\VerifyCsrfToken::class,
++        \Illuminate\Foundation\Http\Middleware\ValidatePostSize::class,
++        \App\Http\Middleware\TrimStrings::class,
++        \Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull::class,
++    ];
++
++    /**
++     * The application's route middleware groups.
++     *
++     * @var array
++     */
++    protected $middlewareGroups = [
++        'web' => [
++            \App\Http\Middleware\EncryptCookies::class,
++            \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
++            \Illuminate\Session\Middleware\StartSession::class,
++            // \Illuminate\Session\Middleware\AuthenticateSession::class,
++            \Illuminate\View\Middleware\ShareErrorsFromSession::class,
++            \App\Http\Middleware\VerifyCsrfToken::class,
++            \Illuminate\Routing\Middleware\SubstituteBindings::class,
++        ],
++
++        'api' => [
++            'throttle:60,1',
++            'bindings',
++        ],
+     ];
+ 
+     /**
+      * The application's route middleware.
+      *
++     * These middleware may be assigned to groups or used individually.
++     *
+      * @var array
+      */
+     protected $routeMiddleware = [
+-        'auth' => \App\Http\Middleware\Authenticate::class,
++        'auth' => \Illuminate\Auth\Middleware\Authenticate::class,
+         'auth.basic' => \Illuminate\Auth\Middleware\AuthenticateWithBasicAuth::class,
++        'bindings' => \Illuminate\Routing\Middleware\SubstituteBindings::class,
++        'can' => \Illuminate\Auth\Middleware\Authorize::class,
+         'guest' => \App\Http\Middleware\RedirectIfAuthenticated::class,
++        'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
+     ];
+ }
+diff --git a/LaravelDiffApp/app/Http/Middleware/Authenticate.php b/LaravelDiffApp/app/Http/Middleware/Authenticate.php
+deleted file mode 100644
+index 4fbafec..0000000
+--- a/LaravelDiffApp/app/Http/Middleware/Authenticate.php
++++ /dev/null
+@@ -1,47 +0,0 @@
+-<?php
+-
+-namespace App\Http\Middleware;
+-
+-use Closure;
+-use Illuminate\Contracts\Auth\Guard;
+-
+-class Authenticate
+-{
+-    /**
+-     * The Guard implementation.
+-     *
+-     * @var Guard
+-     */
+-    protected $auth;
+-
+-    /**
+-     * Create a new filter instance.
+-     *
+-     * @param  Guard  $auth
+-     * @return void
+-     */
+-    public function __construct(Guard $auth)
+-    {
+-        $this->auth = $auth;
+-    }
+-
+-    /**
+-     * Handle an incoming request.
+-     *
+-     * @param  \Illuminate\Http\Request  $request
+-     * @param  \Closure  $next
+-     * @return mixed
+-     */
+-    public function handle($request, Closure $next)
+-    {
+-        if ($this->auth->guest()) {
+-            if ($request->ajax()) {
+-                return response('Unauthorized.', 401);
+-            } else {
+-                return redirect()->guest('auth/login');
+-            }
+-        }
+-
+-        return $next($request);
+-    }
+-}
+diff --git a/LaravelDiffApp/app/Http/Middleware/RedirectIfAuthenticated.php b/LaravelDiffApp/app/Http/Middleware/RedirectIfAuthenticated.php
+index 495b629..e4cec9c 100644
+--- a/LaravelDiffApp/app/Http/Middleware/RedirectIfAuthenticated.php
++++ b/LaravelDiffApp/app/Http/Middleware/RedirectIfAuthenticated.php
+@@ -3,38 +3,21 @@
+ namespace App\Http\Middleware;
+ 
+ use Closure;
+-use Illuminate\Contracts\Auth\Guard;
++use Illuminate\Support\Facades\Auth;
+ 
+ class RedirectIfAuthenticated
+ {
+-    /**
+-     * The Guard implementation.
+-     *
+-     * @var Guard
+-     */
+-    protected $auth;
+-
+-    /**
+-     * Create a new filter instance.
+-     *
+-     * @param  Guard  $auth
+-     * @return void
+-     */
+-    public function __construct(Guard $auth)
+-    {
+-        $this->auth = $auth;
+-    }
+-
+     /**
+      * Handle an incoming request.
+      *
+      * @param  \Illuminate\Http\Request  $request
+      * @param  \Closure  $next
++     * @param  string|null  $guard
+      * @return mixed
+      */
+-    public function handle($request, Closure $next)
++    public function handle($request, Closure $next, $guard = null)
+     {
+-        if ($this->auth->check()) {
++        if (Auth::guard($guard)->check()) {
+             return redirect('/home');
+         }
+ 
+diff --git a/LaravelDiffApp/app/Http/Middleware/TrimStrings.php b/LaravelDiffApp/app/Http/Middleware/TrimStrings.php
+new file mode 100644
+index 0000000..943e9a4
+--- /dev/null
++++ b/LaravelDiffApp/app/Http/Middleware/TrimStrings.php
+@@ -0,0 +1,18 @@
++<?php
++
++namespace App\Http\Middleware;
++
++use Illuminate\Foundation\Http\Middleware\TrimStrings as BaseTrimmer;
++
++class TrimStrings extends BaseTrimmer
++{
++    /**
++     * The names of the attributes that should not be trimmed.
++     *
++     * @var array
++     */
++    protected $except = [
++        'password',
++        'password_confirmation',
++    ];
++}
+diff --git a/LaravelDiffApp/app/Http/Requests/Request.php b/LaravelDiffApp/app/Http/Requests/Request.php
+deleted file mode 100644
+index 76b2ffd..0000000
+--- a/LaravelDiffApp/app/Http/Requests/Request.php
++++ /dev/null
+@@ -1,10 +0,0 @@
+-<?php
+-
+-namespace App\Http\Requests;
+-
+-use Illuminate\Foundation\Http\FormRequest;
+-
+-abstract class Request extends FormRequest
+-{
+-    //
+-}
+diff --git a/LaravelDiffApp/app/Jobs/Job.php b/LaravelDiffApp/app/Jobs/Job.php
+deleted file mode 100644
+index 55ece29..0000000
+--- a/LaravelDiffApp/app/Jobs/Job.php
++++ /dev/null
+@@ -1,21 +0,0 @@
+-<?php
+-
+-namespace App\Jobs;
+-
+-use Illuminate\Bus\Queueable;
+-
+-abstract class Job
+-{
+-    /*
+-    |--------------------------------------------------------------------------
+-    | Queueable Jobs
+-    |--------------------------------------------------------------------------
+-    |
+-    | This job base class provides a central location to place any logic that
+-    | is shared across all of your jobs. The trait included with the class
+-    | provides access to the "onQueue" and "delay" queue helper methods.
+-    |
+-    */
+-
+-    use Queueable;
+-}
+diff --git a/LaravelDiffApp/app/Listeners/.gitkeep b/LaravelDiffApp/app/Listeners/.gitkeep
+deleted file mode 100644
+index e69de29..0000000
+diff --git a/LaravelDiffApp/app/Policies/.gitkeep b/LaravelDiffApp/app/Policies/.gitkeep
+deleted file mode 100644
+index e69de29..0000000
+diff --git a/LaravelDiffApp/app/Providers/AuthServiceProvider.php b/LaravelDiffApp/app/Providers/AuthServiceProvider.php
+index 9b35830..9784b1a 100644
+--- a/LaravelDiffApp/app/Providers/AuthServiceProvider.php
++++ b/LaravelDiffApp/app/Providers/AuthServiceProvider.php
+@@ -2,7 +2,7 @@
+ 
+ namespace App\Providers;
+ 
+-use Illuminate\Contracts\Auth\Access\Gate as GateContract;
++use Illuminate\Support\Facades\Gate;
+ use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
+ 
+ class AuthServiceProvider extends ServiceProvider
+@@ -17,14 +17,13 @@ class AuthServiceProvider extends ServiceProvider
+     ];
+ 
+     /**
+-     * Register any application authentication / authorization services.
++     * Register any authentication / authorization services.
+      *
+-     * @param  \Illuminate\Contracts\Auth\Access\Gate  $gate
+      * @return void
+      */
+-    public function boot(GateContract $gate)
++    public function boot()
+     {
+-        parent::registerPolicies($gate);
++        $this->registerPolicies();
+ 
+         //
+     }
+diff --git a/LaravelDiffApp/app/Providers/BroadcastServiceProvider.php b/LaravelDiffApp/app/Providers/BroadcastServiceProvider.php
+new file mode 100644
+index 0000000..352cce4
+--- /dev/null
++++ b/LaravelDiffApp/app/Providers/BroadcastServiceProvider.php
+@@ -0,0 +1,21 @@
++<?php
++
++namespace App\Providers;
++
++use Illuminate\Support\ServiceProvider;
++use Illuminate\Support\Facades\Broadcast;
++
++class BroadcastServiceProvider extends ServiceProvider
++{
++    /**
++     * Bootstrap any application services.
++     *
++     * @return void
++     */
++    public function boot()
++    {
++        Broadcast::routes();
++
++        require base_path('routes/channels.php');
++    }
++}
+diff --git a/LaravelDiffApp/app/Providers/EventServiceProvider.php b/LaravelDiffApp/app/Providers/EventServiceProvider.php
+index 58ce962..fca6152 100644
+--- a/LaravelDiffApp/app/Providers/EventServiceProvider.php
++++ b/LaravelDiffApp/app/Providers/EventServiceProvider.php
+@@ -2,7 +2,7 @@
+ 
+ namespace App\Providers;
+ 
+-use Illuminate\Contracts\Events\Dispatcher as DispatcherContract;
++use Illuminate\Support\Facades\Event;
+ use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
+ 
+ class EventServiceProvider extends ServiceProvider
+@@ -13,20 +13,19 @@ class EventServiceProvider extends ServiceProvider
+      * @var array
+      */
+     protected $listen = [
+-        'App\Events\SomeEvent' => [
++        'App\Events\Event' => [
+             'App\Listeners\EventListener',
+         ],
+     ];
+ 
+     /**
+-     * Register any other events for your application.
++     * Register any events for your application.
+      *
+-     * @param  \Illuminate\Contracts\Events\Dispatcher  $events
+      * @return void
+      */
+-    public function boot(DispatcherContract $events)
++    public function boot()
+     {
+-        parent::boot($events);
++        parent::boot();
+ 
+         //
+     }
+diff --git a/LaravelDiffApp/app/Providers/RouteServiceProvider.php b/LaravelDiffApp/app/Providers/RouteServiceProvider.php
+index d50b1c0..5ea48d3 100644
+--- a/LaravelDiffApp/app/Providers/RouteServiceProvider.php
++++ b/LaravelDiffApp/app/Providers/RouteServiceProvider.php
+@@ -2,13 +2,13 @@
+ 
+ namespace App\Providers;
+ 
+-use Illuminate\Routing\Router;
++use Illuminate\Support\Facades\Route;
+ use Illuminate\Foundation\Support\Providers\RouteServiceProvider as ServiceProvider;
+ 
+ class RouteServiceProvider extends ServiceProvider
+ {
+     /**
+-     * This namespace is applied to the controller routes in your routes file.
++     * This namespace is applied to your controller routes.
+      *
+      * In addition, it is set as the URL generator's root namespace.
+      *
+@@ -19,26 +19,55 @@ class RouteServiceProvider extends ServiceProvider
+     /**
+      * Define your route model bindings, pattern filters, etc.
+      *
+-     * @param  \Illuminate\Routing\Router  $router
+      * @return void
+      */
+-    public function boot(Router $router)
++    public function boot()
+     {
+         //
+ 
+-        parent::boot($router);
++        parent::boot();
+     }
+ 
+     /**
+      * Define the routes for the application.
+      *
+-     * @param  \Illuminate\Routing\Router  $router
+      * @return void
+      */
+-    public function map(Router $router)
++    public function map()
+     {
+-        $router->group(['namespace' => $this->namespace], function ($router) {
+-            require app_path('Http/routes.php');
+-        });
++        $this->mapApiRoutes();
++
++        $this->mapWebRoutes();
++
++        //
++    }
++
++    /**
++     * Define the "web" routes for the application.
++     *
++     * These routes all receive session state, CSRF protection, etc.
++     *
++     * @return void
++     */
++    protected function mapWebRoutes()
++    {
++        Route::middleware('web')
++             ->namespace($this->namespace)
++             ->group(base_path('routes/web.php'));
++    }
++
++    /**
++     * Define the "api" routes for the application.
++     *
++     * These routes are typically stateless.
++     *
++     * @return void
++     */
++    protected function mapApiRoutes()
++    {
++        Route::prefix('api')
++             ->middleware('api')
++             ->namespace($this->namespace)
++             ->group(base_path('routes/api.php'));
+     }
+ }
+diff --git a/LaravelDiffApp/app/User.php b/LaravelDiffApp/app/User.php
+index 9f1e748..bfd96a6 100644
+--- a/LaravelDiffApp/app/User.php
++++ b/LaravelDiffApp/app/User.php
+@@ -2,38 +2,28 @@
+ 
+ namespace App;
+ 
+-use Illuminate\Auth\Authenticatable;
+-use Illuminate\Database\Eloquent\Model;
+-use Illuminate\Auth\Passwords\CanResetPassword;
+-use Illuminate\Foundation\Auth\Access\Authorizable;
+-use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
+-use Illuminate\Contracts\Auth\Access\Authorizable as AuthorizableContract;
+-use Illuminate\Contracts\Auth\CanResetPassword as CanResetPasswordContract;
++use Illuminate\Notifications\Notifiable;
++use Illuminate\Foundation\Auth\User as Authenticatable;
+ 
+-class User extends Model implements AuthenticatableContract,
+-                                    AuthorizableContract,
+-                                    CanResetPasswordContract
++class User extends Authenticatable
+ {
+-    use Authenticatable, Authorizable, CanResetPassword;
+-
+-    /**
+-     * The database table used by the model.
+-     *
+-     * @var string
+-     */
+-    protected $table = 'users';
++    use Notifiable;
+ 
+     /**
+      * The attributes that are mass assignable.
+      *
+      * @var array
+      */
+-    protected $fillable = ['name', 'email', 'password'];
++    protected $fillable = [
++        'name', 'email', 'password',
++    ];
+ 
+     /**
+-     * The attributes excluded from the model's JSON form.
++     * The attributes that should be hidden for arrays.
+      *
+      * @var array
+      */
+-    protected $hidden = ['password', 'remember_token'];
++    protected $hidden = [
++        'password', 'remember_token',
++    ];
+ }
+diff --git a/LaravelDiffApp/artisan b/LaravelDiffApp/artisan
+index df630d0..44dc07b 100755
+--- a/LaravelDiffApp/artisan
++++ b/LaravelDiffApp/artisan
+@@ -40,7 +40,7 @@ $status = $kernel->handle(
+ | Shutdown The Application
+ |--------------------------------------------------------------------------
+ |
+-| Once Artisan has finished running. We will fire off the shutdown events
++| Once Artisan has finished running, we will fire off the shutdown events
+ | so that any final work may be done by the application before we shut
+ | down the process. This is the last thing to happen to the request.
+ |
+diff --git a/LaravelDiffApp/bootstrap/autoload.php b/LaravelDiffApp/bootstrap/autoload.php
+index 3830137..c64e19f 100644
+--- a/LaravelDiffApp/bootstrap/autoload.php
++++ b/LaravelDiffApp/bootstrap/autoload.php
+@@ -9,26 +9,9 @@ define('LARAVEL_START', microtime(true));
+ |
+ | Composer provides a convenient, automatically generated class loader
+ | for our application. We just need to utilize it! We'll require it
+-| into the script here so that we do not have to worry about the
+-| loading of any our classes "manually". Feels great to relax.
++| into the script here so we do not have to manually load any of
++| our application's PHP classes. It just feels great to relax.
+ |
+ */
+ 
+ require __DIR__.'/../vendor/autoload.php';
+-
+-/*
+-|--------------------------------------------------------------------------
+-| Include The Compiled Class File
+-|--------------------------------------------------------------------------
+-|
+-| To dramatically increase your application's performance, you may use a
+-| compiled class file which contains all of the classes commonly used
+-| by a request. The Artisan "optimize" is used to create this file.
+-|
+-*/
+-
+-$compiledPath = __DIR__.'/cache/compiled.php';
+-
+-if (file_exists($compiledPath)) {
+-    require $compiledPath;
+-}
+diff --git a/LaravelDiffApp/composer.json b/LaravelDiffApp/composer.json
+index a6ced5e..eb080e9 100644
+--- a/LaravelDiffApp/composer.json
++++ b/LaravelDiffApp/composer.json
+@@ -5,14 +5,14 @@
+     "license": "MIT",
+     "type": "project",
+     "require": {
+-        "php": ">=5.5.9",
+-        "laravel/framework": "5.1.*"
++        "php": ">=5.6.4",
++        "laravel/framework": "5.4.*",
++        "laravel/tinker": "~1.0"
+     },
+     "require-dev": {
+         "fzaninotto/faker": "~1.4",
+         "mockery/mockery": "0.9.*",
+-        "phpunit/phpunit": "~4.0",
+-        "phpspec/phpspec": "~2.1"
++        "phpunit/phpunit": "~5.7"
+     },
+     "autoload": {
+         "classmap": [
+@@ -23,29 +23,29 @@
+         }
+     },
+     "autoload-dev": {
+-        "classmap": [
+-            "tests/TestCase.php"
+-        ]
++        "psr-4": {
++            "Tests\\": "tests/"
++        }
+     },
+     "scripts": {
++        "post-root-package-install": [
++            "php -r \"file_exists('.env') || copy('.env.example', '.env');\""
++        ],
++        "post-create-project-cmd": [
++            "php artisan key:generate"
++        ],
+         "post-install-cmd": [
+-            "php artisan clear-compiled",
++            "Illuminate\\Foundation\\ComposerScripts::postInstall",
+             "php artisan optimize"
+         ],
+-        "pre-update-cmd": [
+-            "php artisan clear-compiled"
+-        ],
+         "post-update-cmd": [
++            "Illuminate\\Foundation\\ComposerScripts::postUpdate",
+             "php artisan optimize"
+-        ],
+-        "post-root-package-install": [
+-            "php -r \"copy('.env.example', '.env');\""
+-        ],
+-        "post-create-project-cmd": [
+-            "php artisan key:generate"
+         ]
+     },
+     "config": {
+-        "preferred-install": "dist"
++        "preferred-install": "dist",
++        "sort-packages": true,
++        "optimize-autoloader": true
+     }
+ }
+diff --git a/LaravelDiffApp/config/app.php b/LaravelDiffApp/config/app.php
+index 656f4bb..135e977 100644
+--- a/LaravelDiffApp/config/app.php
++++ b/LaravelDiffApp/config/app.php
+@@ -2,6 +2,31 @@
+ 
+ return [
+ 
++    /*
++    |--------------------------------------------------------------------------
++    | Application Name
++    |--------------------------------------------------------------------------
++    |
++    | This value is the name of your application. This value is used when the
++    | framework needs to place the application's name in a notification or
++    | any other location as required by the application or its packages.
++    */
++
++    'name' => env('APP_NAME', 'Laravel'),
++
++    /*
++    |--------------------------------------------------------------------------
++    | Application Environment
++    |--------------------------------------------------------------------------
++    |
++    | This value determines the "environment" your application is currently
++    | running in. This may determine how you prefer to configure various
++    | services your application utilizes. Set this in your ".env" file.
++    |
++    */
++
++    'env' => env('APP_ENV', 'production'),
++
+     /*
+     |--------------------------------------------------------------------------
+     | Application Debug Mode
+@@ -26,7 +51,7 @@ return [
+     |
+     */
+ 
+-    'url' => 'http://localhost',
++    'url' => env('APP_URL', 'http://localhost'),
+ 
+     /*
+     |--------------------------------------------------------------------------
+@@ -78,7 +103,7 @@ return [
+     |
+     */
+ 
+-    'key' => env('APP_KEY', 'SomeRandomString'),
++    'key' => env('APP_KEY'),
+ 
+     'cipher' => 'AES-256-CBC',
+ 
+@@ -95,7 +120,9 @@ return [
+     |
+     */
+ 
+-    'log' => 'single',
++    'log' => env('APP_LOG', 'single'),
++
++    'log_level' => env('APP_LOG_LEVEL', 'debug'),
+ 
+     /*
+     |--------------------------------------------------------------------------
+@@ -113,13 +140,11 @@ return [
+         /*
+          * Laravel Framework Service Providers...
+          */
+-        Illuminate\Foundation\Providers\ArtisanServiceProvider::class,
+         Illuminate\Auth\AuthServiceProvider::class,
+         Illuminate\Broadcasting\BroadcastServiceProvider::class,
+         Illuminate\Bus\BusServiceProvider::class,
+         Illuminate\Cache\CacheServiceProvider::class,
+         Illuminate\Foundation\Providers\ConsoleSupportServiceProvider::class,
+-        Illuminate\Routing\ControllerServiceProvider::class,
+         Illuminate\Cookie\CookieServiceProvider::class,
+         Illuminate\Database\DatabaseServiceProvider::class,
+         Illuminate\Encryption\EncryptionServiceProvider::class,
+@@ -127,6 +152,7 @@ return [
+         Illuminate\Foundation\Providers\FoundationServiceProvider::class,
+         Illuminate\Hashing\HashServiceProvider::class,
+         Illuminate\Mail\MailServiceProvider::class,
++        Illuminate\Notifications\NotificationServiceProvider::class,
+         Illuminate\Pagination\PaginationServiceProvider::class,
+         Illuminate\Pipeline\PipelineServiceProvider::class,
+         Illuminate\Queue\QueueServiceProvider::class,
+@@ -137,11 +163,17 @@ return [
+         Illuminate\Validation\ValidationServiceProvider::class,
+         Illuminate\View\ViewServiceProvider::class,
+ 
++        /*
++         * Package Service Providers...
++         */
++        Laravel\Tinker\TinkerServiceProvider::class,
++
+         /*
+          * Application Service Providers...
+          */
+         App\Providers\AppServiceProvider::class,
+         App\Providers\AuthServiceProvider::class,
++        // App\Providers\BroadcastServiceProvider::class,
+         App\Providers\EventServiceProvider::class,
+         App\Providers\RouteServiceProvider::class,
+ 
+@@ -160,39 +192,39 @@ return [
+ 
+     'aliases' => [
+ 
+-        'App'       => Illuminate\Support\Facades\App::class,
+-        'Artisan'   => Illuminate\Support\Facades\Artisan::class,
+-        'Auth'      => Illuminate\Support\Facades\Auth::class,
+-        'Blade'     => Illuminate\Support\Facades\Blade::class,
+-        'Bus'       => Illuminate\Support\Facades\Bus::class,
+-        'Cache'     => Illuminate\Support\Facades\Cache::class,
+-        'Config'    => Illuminate\Support\Facades\Config::class,
+-        'Cookie'    => Illuminate\Support\Facades\Cookie::class,
+-        'Crypt'     => Illuminate\Support\Facades\Crypt::class,
+-        'DB'        => Illuminate\Support\Facades\DB::class,
+-        'Eloquent'  => Illuminate\Database\Eloquent\Model::class,
+-        'Event'     => Illuminate\Support\Facades\Event::class,
+-        'File'      => Illuminate\Support\Facades\File::class,
+-        'Gate'      => Illuminate\Support\Facades\Gate::class,
+-        'Hash'      => Illuminate\Support\Facades\Hash::class,
+-        'Input'     => Illuminate\Support\Facades\Input::class,
+-        'Inspiring' => Illuminate\Foundation\Inspiring::class,
+-        'Lang'      => Illuminate\Support\Facades\Lang::class,
+-        'Log'       => Illuminate\Support\Facades\Log::class,
+-        'Mail'      => Illuminate\Support\Facades\Mail::class,
+-        'Password'  => Illuminate\Support\Facades\Password::class,
+-        'Queue'     => Illuminate\Support\Facades\Queue::class,
+-        'Redirect'  => Illuminate\Support\Facades\Redirect::class,
+-        'Redis'     => Illuminate\Support\Facades\Redis::class,
+-        'Request'   => Illuminate\Support\Facades\Request::class,
+-        'Response'  => Illuminate\Support\Facades\Response::class,
+-        'Route'     => Illuminate\Support\Facades\Route::class,
+-        'Schema'    => Illuminate\Support\Facades\Schema::class,
+-        'Session'   => Illuminate\Support\Facades\Session::class,
+-        'Storage'   => Illuminate\Support\Facades\Storage::class,
+-        'URL'       => Illuminate\Support\Facades\URL::class,
++        'App' => Illuminate\Support\Facades\App::class,
++        'Artisan' => Illuminate\Support\Facades\Artisan::class,
++        'Auth' => Illuminate\Support\Facades\Auth::class,
++        'Blade' => Illuminate\Support\Facades\Blade::class,
++        'Broadcast' => Illuminate\Support\Facades\Broadcast::class,
++        'Bus' => Illuminate\Support\Facades\Bus::class,
++        'Cache' => Illuminate\Support\Facades\Cache::class,
++        'Config' => Illuminate\Support\Facades\Config::class,
++        'Cookie' => Illuminate\Support\Facades\Cookie::class,
++        'Crypt' => Illuminate\Support\Facades\Crypt::class,
++        'DB' => Illuminate\Support\Facades\DB::class,
++        'Eloquent' => Illuminate\Database\Eloquent\Model::class,
++        'Event' => Illuminate\Support\Facades\Event::class,
++        'File' => Illuminate\Support\Facades\File::class,
++        'Gate' => Illuminate\Support\Facades\Gate::class,
++        'Hash' => Illuminate\Support\Facades\Hash::class,
++        'Lang' => Illuminate\Support\Facades\Lang::class,
++        'Log' => Illuminate\Support\Facades\Log::class,
++        'Mail' => Illuminate\Support\Facades\Mail::class,
++        'Notification' => Illuminate\Support\Facades\Notification::class,
++        'Password' => Illuminate\Support\Facades\Password::class,
++        'Queue' => Illuminate\Support\Facades\Queue::class,
++        'Redirect' => Illuminate\Support\Facades\Redirect::class,
++        'Redis' => Illuminate\Support\Facades\Redis::class,
++        'Request' => Illuminate\Support\Facades\Request::class,
++        'Response' => Illuminate\Support\Facades\Response::class,
++        'Route' => Illuminate\Support\Facades\Route::class,
++        'Schema' => Illuminate\Support\Facades\Schema::class,
++        'Session' => Illuminate\Support\Facades\Session::class,
++        'Storage' => Illuminate\Support\Facades\Storage::class,
++        'URL' => Illuminate\Support\Facades\URL::class,
+         'Validator' => Illuminate\Support\Facades\Validator::class,
+-        'View'      => Illuminate\Support\Facades\View::class,
++        'View' => Illuminate\Support\Facades\View::class,
+ 
+     ],
+ 
+diff --git a/LaravelDiffApp/config/auth.php b/LaravelDiffApp/config/auth.php
+index 7f4a87f..7817501 100644
+--- a/LaravelDiffApp/config/auth.php
++++ b/LaravelDiffApp/config/auth.php
+@@ -4,53 +4,86 @@ return [
+ 
+     /*
+     |--------------------------------------------------------------------------
+-    | Default Authentication Driver
++    | Authentication Defaults
+     |--------------------------------------------------------------------------
+     |
+-    | This option controls the authentication driver that will be utilized.
+-    | This driver manages the retrieval and authentication of the users
+-    | attempting to get access to protected areas of your application.
+-    |
+-    | Supported: "database", "eloquent"
++    | This option controls the default authentication "guard" and password
++    | reset options for your application. You may change these defaults
++    | as required, but they're a perfect start for most applications.
+     |
+     */
+ 
+-    'driver' => 'eloquent',
++    'defaults' => [
++        'guard' => 'web',
++        'passwords' => 'users',
++    ],
+ 
+     /*
+     |--------------------------------------------------------------------------
+-    | Authentication Model
++    | Authentication Guards
+     |--------------------------------------------------------------------------
+     |
+-    | When using the "Eloquent" authentication driver, we need to know which
+-    | Eloquent model should be used to retrieve your users. Of course, it
+-    | is often just the "User" model but you may use whatever you like.
++    | Next, you may define every authentication guard for your application.
++    | Of course, a great default configuration has been defined for you
++    | here which uses session storage and the Eloquent user provider.
++    |
++    | All authentication drivers have a user provider. This defines how the
++    | users are actually retrieved out of your database or other storage
++    | mechanisms used by this application to persist your user's data.
++    |
++    | Supported: "session", "token"
+     |
+     */
+ 
+-    'model' => App\User::class,
++    'guards' => [
++        'web' => [
++            'driver' => 'session',
++            'provider' => 'users',
++        ],
++
++        'api' => [
++            'driver' => 'token',
++            'provider' => 'users',
++        ],
++    ],
+ 
+     /*
+     |--------------------------------------------------------------------------
+-    | Authentication Table
++    | User Providers
+     |--------------------------------------------------------------------------
+     |
+-    | When using the "Database" authentication driver, we need to know which
+-    | table should be used to retrieve your users. We have chosen a basic
+-    | default value but you may easily change it to any table you like.
++    | All authentication drivers have a user provider. This defines how the
++    | users are actually retrieved out of your database or other storage
++    | mechanisms used by this application to persist your user's data.
++    |
++    | If you have multiple user tables or models you may configure multiple
++    | sources which represent each model / table. These sources may then
++    | be assigned to any extra authentication guards you have defined.
++    |
++    | Supported: "database", "eloquent"
+     |
+     */
+ 
+-    'table' => 'users',
++    'providers' => [
++        'users' => [
++            'driver' => 'eloquent',
++            'model' => App\User::class,
++        ],
++
++        // 'users' => [
++        //     'driver' => 'database',
++        //     'table' => 'users',
++        // ],
++    ],
+ 
+     /*
+     |--------------------------------------------------------------------------
+-    | Password Reset Settings
++    | Resetting Passwords
+     |--------------------------------------------------------------------------
+     |
+-    | Here you may set the options for resetting passwords including the view
+-    | that is your password reset e-mail. You can also set the name of the
+-    | table that maintains all of the reset tokens for your application.
++    | You may specify multiple password reset configurations if you have more
++    | than one user table or model in the application and you want to have
++    | separate password reset settings based on the specific user types.
+     |
+     | The expire time is the number of minutes that the reset token should be
+     | considered valid. This security feature keeps tokens short-lived so
+@@ -58,10 +91,12 @@ return [
+     |
+     */
+ 
+-    'password' => [
+-        'email' => 'emails.password',
+-        'table' => 'password_resets',
+-        'expire' => 60,
++    'passwords' => [
++        'users' => [
++            'provider' => 'users',
++            'table' => 'password_resets',
++            'expire' => 60,
++        ],
+     ],
+ 
+ ];
+diff --git a/LaravelDiffApp/config/broadcasting.php b/LaravelDiffApp/config/broadcasting.php
+index 36f9b3c..5eecd2b 100644
+--- a/LaravelDiffApp/config/broadcasting.php
++++ b/LaravelDiffApp/config/broadcasting.php
+@@ -11,9 +11,11 @@ return [
+     | framework when an event needs to be broadcast. You may set this to
+     | any of the connections defined in the "connections" array below.
+     |
++    | Supported: "pusher", "redis", "log", "null"
++    |
+     */
+ 
+-    'default' => env('BROADCAST_DRIVER', 'pusher'),
++    'default' => env('BROADCAST_DRIVER', 'null'),
+ 
+     /*
+     |--------------------------------------------------------------------------
+@@ -30,9 +32,12 @@ return [
+ 
+         'pusher' => [
+             'driver' => 'pusher',
+-            'key' => env('PUSHER_KEY'),
+-            'secret' => env('PUSHER_SECRET'),
++            'key' => env('PUSHER_APP_KEY'),
++            'secret' => env('PUSHER_APP_SECRET'),
+             'app_id' => env('PUSHER_APP_ID'),
++            'options' => [
++                //
++            ],
+         ],
+ 
+         'redis' => [
+@@ -44,6 +49,10 @@ return [
+             'driver' => 'log',
+         ],
+ 
++        'null' => [
++            'driver' => 'null',
++        ],
++
+     ],
+ 
+ ];
+diff --git a/LaravelDiffApp/config/cache.php b/LaravelDiffApp/config/cache.php
+index 379135b..e87f032 100644
+--- a/LaravelDiffApp/config/cache.php
++++ b/LaravelDiffApp/config/cache.php
+@@ -11,6 +11,8 @@ return [
+     | using this caching library. This connection is used when another is
+     | not explicitly specified when executing a given caching function.
+     |
++    | Supported: "apc", "array", "database", "file", "memcached", "redis"
++    |
+     */
+ 
+     'default' => env('CACHE_DRIVER', 'file'),
+@@ -38,20 +40,30 @@ return [
+ 
+         'database' => [
+             'driver' => 'database',
+-            'table'  => 'cache',
++            'table' => 'cache',
+             'connection' => null,
+         ],
+ 
+         'file' => [
+             'driver' => 'file',
+-            'path'   => storage_path('framework/cache'),
++            'path' => storage_path('framework/cache/data'),
+         ],
+ 
+         'memcached' => [
+-            'driver'  => 'memcached',
++            'driver' => 'memcached',
++            'persistent_id' => env('MEMCACHED_PERSISTENT_ID'),
++            'sasl' => [
++                env('MEMCACHED_USERNAME'),
++                env('MEMCACHED_PASSWORD'),
++            ],
++            'options' => [
++                // Memcached::OPT_CONNECT_TIMEOUT  => 2000,
++            ],
+             'servers' => [
+                 [
+-                    'host' => '127.0.0.1', 'port' => 11211, 'weight' => 100,
++                    'host' => env('MEMCACHED_HOST', '127.0.0.1'),
++                    'port' => env('MEMCACHED_PORT', 11211),
++                    'weight' => 100,
+                 ],
+             ],
+         ],
+diff --git a/LaravelDiffApp/config/compile.php b/LaravelDiffApp/config/compile.php
+deleted file mode 100644
+index 04807ea..0000000
+--- a/LaravelDiffApp/config/compile.php
++++ /dev/null
+@@ -1,35 +0,0 @@
+-<?php
+-
+-return [
+-
+-    /*
+-    |--------------------------------------------------------------------------
+-    | Additional Compiled Classes
+-    |--------------------------------------------------------------------------
+-    |
+-    | Here you may specify additional classes to include in the compiled file
+-    | generated by the `artisan optimize` command. These should be classes
+-    | that are included on basically every request into the application.
+-    |
+-    */
+-
+-    'files' => [
+-        //
+-    ],
+-
+-    /*
+-    |--------------------------------------------------------------------------
+-    | Compiled File Providers
+-    |--------------------------------------------------------------------------
+-    |
+-    | Here you may list service providers which define a "compiles" function
+-    | that returns additional files that should be compiled, providing an
+-    | easy way to get common files from any packages you are utilizing.
+-    |
+-    */
+-
+-    'providers' => [
+-        //
+-    ],
+-
+-];
+diff --git a/LaravelDiffApp/config/database.php b/LaravelDiffApp/config/database.php
+index f6cf86b..cab5d06 100644
+--- a/LaravelDiffApp/config/database.php
++++ b/LaravelDiffApp/config/database.php
+@@ -2,19 +2,6 @@
+ 
+ return [
+ 
+-    /*
+-    |--------------------------------------------------------------------------
+-    | PDO Fetch Style
+-    |--------------------------------------------------------------------------
+-    |
+-    | By default, database results will be returned as instances of the PHP
+-    | stdClass object; however, you may desire to retrieve records in an
+-    | array format for simplicity. Here you can tweak the fetch style.
+-    |
+-    */
+-
+-    'fetch' => PDO::FETCH_CLASS,
+-
+     /*
+     |--------------------------------------------------------------------------
+     | Default Database Connection Name
+@@ -47,42 +34,48 @@ return [
+     'connections' => [
+ 
+         'sqlite' => [
+-            'driver'   => 'sqlite',
+-            'database' => storage_path('database.sqlite'),
+-            'prefix'   => '',
++            'driver' => 'sqlite',
++            'database' => env('DB_DATABASE', database_path('database.sqlite')),
++            'prefix' => '',
+         ],
+ 
+         'mysql' => [
+-            'driver'    => 'mysql',
+-            'host'      => env('DB_HOST', 'localhost'),
+-            'database'  => env('DB_DATABASE', 'forge'),
+-            'username'  => env('DB_USERNAME', 'forge'),
+-            'password'  => env('DB_PASSWORD', ''),
+-            'charset'   => 'utf8',
+-            'collation' => 'utf8_unicode_ci',
+-            'prefix'    => '',
+-            'strict'    => false,
++            'driver' => 'mysql',
++            'host' => env('DB_HOST', '127.0.0.1'),
++            'port' => env('DB_PORT', '3306'),
++            'database' => env('DB_DATABASE', 'forge'),
++            'username' => env('DB_USERNAME', 'forge'),
++            'password' => env('DB_PASSWORD', ''),
++            'unix_socket' => env('DB_SOCKET', ''),
++            'charset' => 'utf8mb4',
++            'collation' => 'utf8mb4_unicode_ci',
++            'prefix' => '',
++            'strict' => true,
++            'engine' => null,
+         ],
+ 
+         'pgsql' => [
+-            'driver'   => 'pgsql',
+-            'host'     => env('DB_HOST', 'localhost'),
++            'driver' => 'pgsql',
++            'host' => env('DB_HOST', '127.0.0.1'),
++            'port' => env('DB_PORT', '5432'),
+             'database' => env('DB_DATABASE', 'forge'),
+             'username' => env('DB_USERNAME', 'forge'),
+             'password' => env('DB_PASSWORD', ''),
+-            'charset'  => 'utf8',
+-            'prefix'   => '',
+-            'schema'   => 'public',
++            'charset' => 'utf8',
++            'prefix' => '',
++            'schema' => 'public',
++            'sslmode' => 'prefer',
+         ],
+ 
+         'sqlsrv' => [
+-            'driver'   => 'sqlsrv',
+-            'host'     => env('DB_HOST', 'localhost'),
++            'driver' => 'sqlsrv',
++            'host' => env('DB_HOST', 'localhost'),
++            'port' => env('DB_PORT', '1433'),
+             'database' => env('DB_DATABASE', 'forge'),
+             'username' => env('DB_USERNAME', 'forge'),
+             'password' => env('DB_PASSWORD', ''),
+-            'charset'  => 'utf8',
+-            'prefix'   => '',
++            'charset' => 'utf8',
++            'prefix' => '',
+         ],
+ 
+     ],
+@@ -113,11 +106,12 @@ return [
+ 
+     'redis' => [
+ 
+-        'cluster' => false,
++        'client' => 'predis',
+ 
+         'default' => [
+-            'host'     => '127.0.0.1',
+-            'port'     => 6379,
++            'host' => env('REDIS_HOST', '127.0.0.1'),
++            'password' => env('REDIS_PASSWORD', null),
++            'port' => env('REDIS_PORT', 6379),
+             'database' => 0,
+         ],
+ 
+diff --git a/LaravelDiffApp/config/filesystems.php b/LaravelDiffApp/config/filesystems.php
+index 3fffcf0..4544f60 100644
+--- a/LaravelDiffApp/config/filesystems.php
++++ b/LaravelDiffApp/config/filesystems.php
+@@ -8,14 +8,12 @@ return [
+     |--------------------------------------------------------------------------
+     |
+     | Here you may specify the default filesystem disk that should be used
+-    | by the framework. A "local" driver, as well as a variety of cloud
+-    | based drivers are available for your choosing. Just store away!
+-    |
+-    | Supported: "local", "ftp", "s3", "rackspace"
++    | by the framework. The "local" disk, as well as a variety of cloud
++    | based disks are available to your application. Just store away!
+     |
+     */
+ 
+-    'default' => 'local',
++    'default' => env('FILESYSTEM_DRIVER', 'local'),
+ 
+     /*
+     |--------------------------------------------------------------------------
+@@ -28,7 +26,7 @@ return [
+     |
+     */
+ 
+-    'cloud' => 's3',
++    'cloud' => env('FILESYSTEM_CLOUD', 's3'),
+ 
+     /*
+     |--------------------------------------------------------------------------
+@@ -39,45 +37,30 @@ return [
+     | may even configure multiple disks of the same driver. Defaults have
+     | been setup for each driver as an example of the required options.
+     |
++    | Supported Drivers: "local", "ftp", "s3", "rackspace"
++    |
+     */
+ 
+     'disks' => [
+ 
+         'local' => [
+             'driver' => 'local',
+-            'root'   => storage_path('app'),
++            'root' => storage_path('app'),
+         ],
+ 
+-        'ftp' => [
+-            'driver'   => 'ftp',
+-            'host'     => 'ftp.example.com',
+-            'username' => 'your-username',
+-            'password' => 'your-password',
+-
+-            // Optional FTP Settings...
+-            // 'port'     => 21,
+-            // 'root'     => '',
+-            // 'passive'  => true,
+-            // 'ssl'      => true,
+-            // 'timeout'  => 30,
++        'public' => [
++            'driver' => 'local',
++            'root' => storage_path('app/public'),
++            'url' => env('APP_URL').'/storage',
++            'visibility' => 'public',
+         ],
+ 
+         's3' => [
+             'driver' => 's3',
+-            'key'    => 'your-key',
+-            'secret' => 'your-secret',
+-            'region' => 'your-region',
+-            'bucket' => 'your-bucket',
+-        ],
+-
+-        'rackspace' => [
+-            'driver'    => 'rackspace',
+-            'username'  => 'your-username',
+-            'key'       => 'your-key',
+-            'container' => 'your-container',
+-            'endpoint'  => 'https://identity.api.rackspacecloud.com/v2.0/',
+-            'region'    => 'IAD',
+-            'url_type'  => 'publicURL',
++            'key' => env('AWS_KEY'),
++            'secret' => env('AWS_SECRET'),
++            'region' => env('AWS_REGION'),
++            'bucket' => env('AWS_BUCKET'),
+         ],
+ 
+     ],
+diff --git a/LaravelDiffApp/config/mail.php b/LaravelDiffApp/config/mail.php
+index a22807e..bb92224 100644
+--- a/LaravelDiffApp/config/mail.php
++++ b/LaravelDiffApp/config/mail.php
+@@ -11,7 +11,8 @@ return [
+     | sending of e-mail. You may specify which one you're using throughout
+     | your application here. By default, Laravel is setup for SMTP mail.
+     |
+-    | Supported: "smtp", "mail", "sendmail", "mailgun", "mandrill", "ses", "log"
++    | Supported: "smtp", "sendmail", "mailgun", "mandrill", "ses",
++    |            "sparkpost", "log", "array"
+     |
+     */
+ 
+@@ -54,7 +55,10 @@ return [
+     |
+     */
+ 
+-    'from' => ['address' => null, 'name' => null],
++    'from' => [
++        'address' => env('MAIL_FROM_ADDRESS', 'hello@example.com'),
++        'name' => env('MAIL_FROM_NAME', 'Example'),
++    ],
+ 
+     /*
+     |--------------------------------------------------------------------------
+@@ -82,17 +86,6 @@ return [
+ 
+     'username' => env('MAIL_USERNAME'),
+ 
+-    /*
+-    |--------------------------------------------------------------------------
+-    | SMTP Server Password
+-    |--------------------------------------------------------------------------
+-    |
+-    | Here you may set the password required by your SMTP server to send out
+-    | messages from your application. This will be given to the server on
+-    | connection so that the application will be able to send messages.
+-    |
+-    */
+-
+     'password' => env('MAIL_PASSWORD'),
+ 
+     /*
+@@ -110,15 +103,21 @@ return [
+ 
+     /*
+     |--------------------------------------------------------------------------
+-    | Mail "Pretend"
++    | Markdown Mail Settings
+     |--------------------------------------------------------------------------
+     |
+-    | When this option is enabled, e-mail will not actually be sent over the
+-    | web and will instead be written to your application's logs files so
+-    | you may inspect the message. This is great for local development.
++    | If you are using Markdown based email rendering, you may configure your
++    | theme and component paths here, allowing you to customize the design
++    | of the emails. Or, you may simply stick with the Laravel defaults!
+     |
+     */
+ 
+-    'pretend' => false,
++    'markdown' => [
++        'theme' => 'default',
++
++        'paths' => [
++            resource_path('views/vendor/mail'),
++        ],
++    ],
+ 
+ ];
+diff --git a/LaravelDiffApp/config/queue.php b/LaravelDiffApp/config/queue.php
+index cf9b09d..4d83ebd 100644
+--- a/LaravelDiffApp/config/queue.php
++++ b/LaravelDiffApp/config/queue.php
+@@ -7,12 +7,11 @@ return [
+     | Default Queue Driver
+     |--------------------------------------------------------------------------
+     |
+-    | The Laravel queue API supports a variety of back-ends via an unified
++    | Laravel's queue API supports an assortment of back-ends via a single
+     | API, giving you convenient access to each back-end using the same
+     | syntax for each one. Here you may set the default queue driver.
+     |
+-    | Supported: "null", "sync", "database", "beanstalkd",
+-    |            "sqs", "iron", "redis"
++    | Supported: "sync", "database", "beanstalkd", "sqs", "redis", "null"
+     |
+     */
+ 
+@@ -39,38 +38,30 @@ return [
+             'driver' => 'database',
+             'table' => 'jobs',
+             'queue' => 'default',
+-            'expire' => 60,
++            'retry_after' => 90,
+         ],
+ 
+         'beanstalkd' => [
+             'driver' => 'beanstalkd',
+-            'host'   => 'localhost',
+-            'queue'  => 'default',
+-            'ttr'    => 60,
++            'host' => 'localhost',
++            'queue' => 'default',
++            'retry_after' => 90,
+         ],
+ 
+         'sqs' => [
+             'driver' => 'sqs',
+-            'key'    => 'your-public-key',
++            'key' => 'your-public-key',
+             'secret' => 'your-secret-key',
+-            'queue'  => 'your-queue-url',
++            'prefix' => 'https://sqs.us-east-1.amazonaws.com/your-account-id',
++            'queue' => 'your-queue-name',
+             'region' => 'us-east-1',
+         ],
+ 
+-        'iron' => [
+-            'driver'  => 'iron',
+-            'host'    => 'mq-aws-us-east-1.iron.io',
+-            'token'   => 'your-token',
+-            'project' => 'your-project-id',
+-            'queue'   => 'your-queue-name',
+-            'encrypt' => true,
+-        ],
+-
+         'redis' => [
+             'driver' => 'redis',
+             'connection' => 'default',
+-            'queue'  => 'default',
+-            'expire' => 60,
++            'queue' => 'default',
++            'retry_after' => 90,
+         ],
+ 
+     ],
+@@ -87,7 +78,8 @@ return [
+     */
+ 
+     'failed' => [
+-        'database' => 'mysql', 'table' => 'failed_jobs',
++        'database' => env('DB_CONNECTION', 'mysql'),
++        'table' => 'failed_jobs',
+     ],
+ 
+ ];
+diff --git a/LaravelDiffApp/config/services.php b/LaravelDiffApp/config/services.php
+index 93eec86..4460f0e 100644
+--- a/LaravelDiffApp/config/services.php
++++ b/LaravelDiffApp/config/services.php
+@@ -8,7 +8,7 @@ return [
+     |--------------------------------------------------------------------------
+     |
+     | This file is for storing the credentials for third party services such
+-    | as Stripe, Mailgun, Mandrill, and others. This file provides a sane
++    | as Stripe, Mailgun, SparkPost and others. This file provides a sane
+     | default location for this type of information, allowing packages
+     | to have a conventional place to find your various credentials.
+     |
+@@ -19,19 +19,19 @@ return [
+         'secret' => env('MAILGUN_SECRET'),
+     ],
+ 
+-    'mandrill' => [
+-        'secret' => env('MANDRILL_SECRET'),
+-    ],
+-
+     'ses' => [
+-        'key'    => env('SES_KEY'),
++        'key' => env('SES_KEY'),
+         'secret' => env('SES_SECRET'),
+         'region' => 'us-east-1',
+     ],
+ 
++    'sparkpost' => [
++        'secret' => env('SPARKPOST_SECRET'),
++    ],
++
+     'stripe' => [
+-        'model'  => App\User::class,
+-        'key'    => env('STRIPE_KEY'),
++        'model' => App\User::class,
++        'key' => env('STRIPE_KEY'),
+         'secret' => env('STRIPE_SECRET'),
+     ],
+ 
+diff --git a/LaravelDiffApp/config/session.php b/LaravelDiffApp/config/session.php
+index f1b0042..e2779ad 100644
+--- a/LaravelDiffApp/config/session.php
++++ b/LaravelDiffApp/config/session.php
+@@ -85,6 +85,19 @@ return [
+ 
+     'table' => 'sessions',
+ 
++    /*
++    |--------------------------------------------------------------------------
++    | Session Cache Store
++    |--------------------------------------------------------------------------
++    |
++    | When using the "apc" or "memcached" session drivers, you may specify a
++    | cache store that should be used for these sessions. This value must
++    | correspond with one of the application's configured cache stores.
++    |
++    */
++
++    'store' => null,
++
+     /*
+     |--------------------------------------------------------------------------
+     | Session Sweeping Lottery
+@@ -135,7 +148,7 @@ return [
+     |
+     */
+ 
+-    'domain' => null,
++    'domain' => env('SESSION_DOMAIN', null),
+ 
+     /*
+     |--------------------------------------------------------------------------
+@@ -148,6 +161,19 @@ return [
+     |
+     */
+ 
+-    'secure' => false,
++    'secure' => env('SESSION_SECURE_COOKIE', false),
++
++    /*
++    |--------------------------------------------------------------------------
++    | HTTP Access Only
++    |--------------------------------------------------------------------------
++    |
++    | Setting this value to true will prevent JavaScript from accessing the
++    | value of the cookie and the cookie will only be accessible through
++    | the HTTP protocol. You are free to modify this option if needed.
++    |
++    */
++
++    'http_only' => true,
+ 
+ ];
+diff --git a/LaravelDiffApp/config/view.php b/LaravelDiffApp/config/view.php
+index e193ab6..2acfd9c 100644
+--- a/LaravelDiffApp/config/view.php
++++ b/LaravelDiffApp/config/view.php
+@@ -14,7 +14,7 @@ return [
+     */
+ 
+     'paths' => [
+-        realpath(base_path('resources/views')),
++        resource_path('views'),
+     ],
+ 
+     /*
+diff --git a/LaravelDiffApp/database/factories/ModelFactory.php b/LaravelDiffApp/database/factories/ModelFactory.php
+index 0876c70..7926c79 100644
+--- a/LaravelDiffApp/database/factories/ModelFactory.php
++++ b/LaravelDiffApp/database/factories/ModelFactory.php
+@@ -11,11 +11,14 @@
+ |
+ */
+ 
++/** @var \Illuminate\Database\Eloquent\Factory $factory */
+ $factory->define(App\User::class, function (Faker\Generator $faker) {
++    static $password;
++
+     return [
+         'name' => $faker->name,
+-        'email' => $faker->email,
+-        'password' => bcrypt(str_random(10)),
++        'email' => $faker->unique()->safeEmail,
++        'password' => $password ?: $password = bcrypt('secret'),
+         'remember_token' => str_random(10),
+     ];
+ });
+diff --git a/LaravelDiffApp/database/migrations/.gitkeep b/LaravelDiffApp/database/migrations/.gitkeep
+deleted file mode 100644
+index e69de29..0000000
+diff --git a/LaravelDiffApp/database/migrations/2014_10_12_000000_create_users_table.php b/LaravelDiffApp/database/migrations/2014_10_12_000000_create_users_table.php
+index 65d3d08..689cbee 100644
+--- a/LaravelDiffApp/database/migrations/2014_10_12_000000_create_users_table.php
++++ b/LaravelDiffApp/database/migrations/2014_10_12_000000_create_users_table.php
+@@ -1,5 +1,6 @@
+ <?php
+ 
++use Illuminate\Support\Facades\Schema;
+ use Illuminate\Database\Schema\Blueprint;
+ use Illuminate\Database\Migrations\Migration;
+ 
+@@ -16,7 +17,7 @@ class CreateUsersTable extends Migration
+             $table->increments('id');
+             $table->string('name');
+             $table->string('email')->unique();
+-            $table->string('password', 60);
++            $table->string('password');
+             $table->rememberToken();
+             $table->timestamps();
+         });
+@@ -29,6 +30,6 @@ class CreateUsersTable extends Migration
+      */
+     public function down()
+     {
+-        Schema::drop('users');
++        Schema::dropIfExists('users');
+     }
+ }
+diff --git a/LaravelDiffApp/database/migrations/2014_10_12_100000_create_password_resets_table.php b/LaravelDiffApp/database/migrations/2014_10_12_100000_create_password_resets_table.php
+index 00057f9..0d5cb84 100644
+--- a/LaravelDiffApp/database/migrations/2014_10_12_100000_create_password_resets_table.php
++++ b/LaravelDiffApp/database/migrations/2014_10_12_100000_create_password_resets_table.php
+@@ -1,5 +1,6 @@
+ <?php
+ 
++use Illuminate\Support\Facades\Schema;
+ use Illuminate\Database\Schema\Blueprint;
+ use Illuminate\Database\Migrations\Migration;
+ 
+@@ -14,8 +15,8 @@ class CreatePasswordResetsTable extends Migration
+     {
+         Schema::create('password_resets', function (Blueprint $table) {
+             $table->string('email')->index();
+-            $table->string('token')->index();
+-            $table->timestamp('created_at');
++            $table->string('token');
++            $table->timestamp('created_at')->nullable();
+         });
+     }
+ 
+@@ -26,6 +27,6 @@ class CreatePasswordResetsTable extends Migration
+      */
+     public function down()
+     {
+-        Schema::drop('password_resets');
++        Schema::dropIfExists('password_resets');
+     }
+ }
+diff --git a/LaravelDiffApp/database/seeds/.gitkeep b/LaravelDiffApp/database/seeds/.gitkeep
+deleted file mode 100644
+index e69de29..0000000
+diff --git a/LaravelDiffApp/database/seeds/DatabaseSeeder.php b/LaravelDiffApp/database/seeds/DatabaseSeeder.php
+index 988ea21..e119db6 100644
+--- a/LaravelDiffApp/database/seeds/DatabaseSeeder.php
++++ b/LaravelDiffApp/database/seeds/DatabaseSeeder.php
+@@ -1,7 +1,6 @@
+ <?php
+ 
+ use Illuminate\Database\Seeder;
+-use Illuminate\Database\Eloquent\Model;
+ 
+ class DatabaseSeeder extends Seeder
+ {
+@@ -12,10 +11,6 @@ class DatabaseSeeder extends Seeder
+      */
+     public function run()
+     {
+-        Model::unguard();
+-
+-        // $this->call(UserTableSeeder::class);
+-
+-        Model::reguard();
++        // $this->call(UsersTableSeeder::class);
+     }
+ }
+diff --git a/LaravelDiffApp/gulpfile.js b/LaravelDiffApp/gulpfile.js
+deleted file mode 100644
+index dc6f1eb..0000000
+--- a/LaravelDiffApp/gulpfile.js
++++ /dev/null
+@@ -1,16 +0,0 @@
+-var elixir = require('laravel-elixir');
+-
+-/*
+- |--------------------------------------------------------------------------
+- | Elixir Asset Management
+- |--------------------------------------------------------------------------
+- |
+- | Elixir provides a clean, fluent API for defining some basic Gulp tasks
+- | for your Laravel application. By default, we are compiling the Sass
+- | file for our application, as well as publishing vendor resources.
+- |
+- */
+-
+-elixir(function(mix) {
+-    mix.sass('app.scss');
+-});
+diff --git a/LaravelDiffApp/package.json b/LaravelDiffApp/package.json
+index 8b7c633..630a244 100644
+--- a/LaravelDiffApp/package.json
++++ b/LaravelDiffApp/package.json
+@@ -1,10 +1,21 @@
+ {
+   "private": true,
+-  "devDependencies": {
+-    "gulp": "^3.8.8"
++  "scripts": {
++    "dev": "npm run development",
++    "development": "cross-env NODE_ENV=development node_modules/webpack/bin/webpack.js --progress --hide-modules --config=node_modules/laravel-mix/setup/webpack.config.js",
++    "watch": "cross-env NODE_ENV=development node_modules/webpack/bin/webpack.js --watch --progress --hide-modules --config=node_modules/laravel-mix/setup/webpack.config.js",
++    "watch-poll": "npm run watch -- --watch-poll",
++    "hot": "cross-env NODE_ENV=development node_modules/webpack-dev-server/bin/webpack-dev-server.js --inline --hot --config=node_modules/laravel-mix/setup/webpack.config.js",
++    "prod": "npm run production",
++    "production": "cross-env NODE_ENV=production node_modules/webpack/bin/webpack.js --progress --hide-modules --config=node_modules/laravel-mix/setup/webpack.config.js"
+   },
+-  "dependencies": {
+-    "laravel-elixir": "^3.0.0",
+-    "bootstrap-sass": "^3.0.0"
++  "devDependencies": {
++    "axios": "^0.16.2",
++    "bootstrap-sass": "^3.3.7",
++    "cross-env": "^5.0.1",
++    "jquery": "^3.1.1",
++    "laravel-mix": "^1.0",
++    "lodash": "^4.17.4",
++    "vue": "^2.1.10"
+   }
+ }
+diff --git a/LaravelDiffApp/phpspec.yml b/LaravelDiffApp/phpspec.yml
+deleted file mode 100644
+index eb57939..0000000
+--- a/LaravelDiffApp/phpspec.yml
++++ /dev/null
+@@ -1,5 +0,0 @@
+-suites:
+-    main:
+-        namespace: App
+-        psr4_prefix: App
+-        src_path: app
+\ No newline at end of file
+diff --git a/LaravelDiffApp/phpunit.xml b/LaravelDiffApp/phpunit.xml
+index 276262d..9ecda83 100644
+--- a/LaravelDiffApp/phpunit.xml
++++ b/LaravelDiffApp/phpunit.xml
+@@ -7,16 +7,19 @@
+          convertNoticesToExceptions="true"
+          convertWarningsToExceptions="true"
+          processIsolation="false"
+-         stopOnFailure="false"
+-         syntaxCheck="false">
++         stopOnFailure="false">
+     <testsuites>
+-        <testsuite name="Application Test Suite">
+-            <directory>./tests/</directory>
++        <testsuite name="Feature">
++            <directory suffix="Test.php">./tests/Feature</directory>
++        </testsuite>
++
++        <testsuite name="Unit">
++            <directory suffix="Test.php">./tests/Unit</directory>
+         </testsuite>
+     </testsuites>
+     <filter>
+-        <whitelist>
+-            <directory suffix=".php">app/</directory>
++        <whitelist processUncoveredFilesFromWhitelist="true">
++            <directory suffix=".php">./app</directory>
+         </whitelist>
+     </filter>
+     <php>
+diff --git a/LaravelDiffApp/public/.htaccess b/LaravelDiffApp/public/.htaccess
+index 8eb2dd0..903f639 100644
+--- a/LaravelDiffApp/public/.htaccess
++++ b/LaravelDiffApp/public/.htaccess
+@@ -13,4 +13,8 @@
+     RewriteCond %{REQUEST_FILENAME} !-d
+     RewriteCond %{REQUEST_FILENAME} !-f
+     RewriteRule ^ index.php [L]
++
++    # Handle Authorization Header
++    RewriteCond %{HTTP:Authorization} .
++    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+ </IfModule>
+diff --git a/LaravelDiffApp/public/index.php b/LaravelDiffApp/public/index.php
+index c582053..1e1d775 100644
+--- a/LaravelDiffApp/public/index.php
++++ b/LaravelDiffApp/public/index.php
+@@ -4,7 +4,7 @@
+  * Laravel - A PHP Framework For Web Artisans
+  *
+  * @package  Laravel
+- * @author   Taylor Otwell <taylorotwell@gmail.com>
++ * @author   Taylor Otwell <taylor@laravel.com>
+  */
+ 
+ /*
+@@ -15,7 +15,7 @@
+ | Composer provides a convenient, automatically generated class loader for
+ | our application. We just need to utilize it! We'll simply require it
+ | into the script here so that we don't have to worry about manual
+-| loading any of our classes later on. It feels nice to relax.
++| loading any of our classes later on. It feels great to relax.
+ |
+ */
+ 
+diff --git a/LaravelDiffApp/public/web.config b/LaravelDiffApp/public/web.config
+new file mode 100644
+index 0000000..624c176
+--- /dev/null
++++ b/LaravelDiffApp/public/web.config
+@@ -0,0 +1,23 @@
++<configuration>
++  <system.webServer>
++    <rewrite>
++      <rules>
++        <rule name="Imported Rule 1" stopProcessing="true">
++          <match url="^(.*)/$" ignoreCase="false" />
++          <conditions>
++            <add input="{REQUEST_FILENAME}" matchType="IsDirectory" ignoreCase="false" negate="true" />
++          </conditions>
++          <action type="Redirect" redirectType="Permanent" url="/{R:1}" />
++        </rule>
++        <rule name="Imported Rule 2" stopProcessing="true">
++          <match url="^" ignoreCase="false" />
++          <conditions>
++            <add input="{REQUEST_FILENAME}" matchType="IsDirectory" ignoreCase="false" negate="true" />
++            <add input="{REQUEST_FILENAME}" matchType="IsFile" ignoreCase="false" negate="true" />
++          </conditions>
++          <action type="Rewrite" url="index.php" />
++        </rule>
++      </rules>
++    </rewrite>
++  </system.webServer>
++</configuration>
+diff --git a/LaravelDiffApp/readme.md b/LaravelDiffApp/readme.md
+index f67a6cf..2fd50b6 100644
+--- a/LaravelDiffApp/readme.md
++++ b/LaravelDiffApp/readme.md
+@@ -1,18 +1,42 @@
+-## Laravel PHP Framework
++<p align="center"><img src="https://laravel.com/assets/img/components/logo-laravel.svg"></p>
+ 
+-[![Build Status](https://travis-ci.org/laravel/framework.svg)](https://travis-ci.org/laravel/framework)
+-[![Total Downloads](https://poser.pugx.org/laravel/framework/d/total.svg)](https://packagist.org/packages/laravel/framework)
+-[![Latest Stable Version](https://poser.pugx.org/laravel/framework/v/stable.svg)](https://packagist.org/packages/laravel/framework)
+-[![Latest Unstable Version](https://poser.pugx.org/laravel/framework/v/unstable.svg)](https://packagist.org/packages/laravel/framework)
+-[![License](https://poser.pugx.org/laravel/framework/license.svg)](https://packagist.org/packages/laravel/framework)
++<p align="center">
++<a href="https://travis-ci.org/laravel/framework"><img src="https://travis-ci.org/laravel/framework.svg" alt="Build Status"></a>
++<a href="https://packagist.org/packages/laravel/framework"><img src="https://poser.pugx.org/laravel/framework/d/total.svg" alt="Total Downloads"></a>
++<a href="https://packagist.org/packages/laravel/framework"><img src="https://poser.pugx.org/laravel/framework/v/stable.svg" alt="Latest Stable Version"></a>
++<a href="https://packagist.org/packages/laravel/framework"><img src="https://poser.pugx.org/laravel/framework/license.svg" alt="License"></a>
++</p>
+ 
+-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable, creative experience to be truly fulfilling. Laravel attempts to take the pain out of development by easing common tasks used in the majority of web projects, such as authentication, routing, sessions, queueing, and caching.
++## About Laravel
+ 
+-Laravel is accessible, yet powerful, providing powerful tools needed for large, robust applications. A superb inversion of control container, expressive migration system, and tightly integrated unit testing support give you the tools you need to build any application with which you are tasked.
++Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel attempts to take the pain out of development by easing common tasks used in the majority of web projects, such as:
+ 
+-## Official Documentation
++- [Simple, fast routing engine](https://laravel.com/docs/routing).
++- [Powerful dependency injection container](https://laravel.com/docs/container).
++- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
++- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
++- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
++- [Robust background job processing](https://laravel.com/docs/queues).
++- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+ 
+-Documentation for the framework can be found on the [Laravel website](http://laravel.com/docs).
++Laravel is accessible, yet powerful, providing tools needed for large, robust applications. A superb combination of simplicity, elegance, and innovation give you tools you need to build any application with which you are tasked.
++
++## Learning Laravel
++
++Laravel has the most extensive and thorough documentation and video tutorial library of any modern web application framework. The [Laravel documentation](https://laravel.com/docs) is thorough, complete, and makes it a breeze to get started learning the framework.
++
++If you're not in the mood to read, [Laracasts](https://laracasts.com) contains over 900 video tutorials on a range of topics including Laravel, modern PHP, unit testing, JavaScript, and more. Boost the skill level of yourself and your entire team by digging into our comprehensive video library.
++
++## Laravel Sponsors
++
++We would like to extend our thanks to the following sponsors for helping fund on-going Laravel development. If you are interested in becoming a sponsor, please visit the Laravel [Patreon page](http://patreon.com/taylorotwell):
++
++- **[Vehikl](http://vehikl.com)**
++- **[Tighten Co.](https://tighten.co)**
++- **[British Software Development](https://www.britishsoftware.co)**
++- **[Styde](https://styde.net)**
++- [Fragrantica](https://www.fragrantica.com)
++- [SOFTonSOFA](https://softonsofa.com/)
+ 
+ ## Contributing
+ 
+@@ -22,6 +46,6 @@ Thank you for considering contributing to the Laravel framework! The contributio
+ 
+ If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell at taylor@laravel.com. All security vulnerabilities will be promptly addressed.
+ 
+-### License
++## License
+ 
+-The Laravel framework is open-sourced software licensed under the [MIT license](http://opensource.org/licenses/MIT)
++The Laravel framework is open-sourced software licensed under the [MIT license](http://opensource.org/licenses/MIT).
+diff --git a/LaravelDiffApp/resources/assets/js/app.js b/LaravelDiffApp/resources/assets/js/app.js
+new file mode 100644
+index 0000000..c1620c1
+--- /dev/null
++++ b/LaravelDiffApp/resources/assets/js/app.js
+@@ -0,0 +1,22 @@
++
++/**
++ * First we will load all of this project's JavaScript dependencies which
++ * includes Vue and other libraries. It is a great starting point when
++ * building robust, powerful web applications using Vue and Laravel.
++ */
++
++require('./bootstrap');
++
++window.Vue = require('vue');
++
++/**
++ * Next, we will create a fresh Vue application instance and attach it to
++ * the page. Then, you may begin adding components to this application
++ * or customize the JavaScript scaffolding to fit your unique needs.
++ */
++
++Vue.component('example', require('./components/Example.vue'));
++
++const app = new Vue({
++    el: '#app'
++});
+diff --git a/LaravelDiffApp/resources/assets/js/bootstrap.js b/LaravelDiffApp/resources/assets/js/bootstrap.js
+new file mode 100644
+index 0000000..8e0f04e
+--- /dev/null
++++ b/LaravelDiffApp/resources/assets/js/bootstrap.js
+@@ -0,0 +1,53 @@
++
++window._ = require('lodash');
++
++/**
++ * We'll load jQuery and the Bootstrap jQuery plugin which provides support
++ * for JavaScript based Bootstrap features such as modals and tabs. This
++ * code may be modified to fit the specific needs of your application.
++ */
++
++try {
++    window.$ = window.jQuery = require('jquery');
++
++    require('bootstrap-sass');
++} catch (e) {}
++
++/**
++ * We'll load the axios HTTP library which allows us to easily issue requests
++ * to our Laravel back-end. This library automatically handles sending the
++ * CSRF token as a header based on the value of the "XSRF" token cookie.
++ */
++
++window.axios = require('axios');
++
++window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
++
++/**
++ * Next we will register the CSRF Token as a common header with Axios so that
++ * all outgoing HTTP requests automatically have it attached. This is just
++ * a simple convenience so we don't have to attach every token manually.
++ */
++
++let token = document.head.querySelector('meta[name="csrf-token"]');
++
++if (token) {
++    window.axios.defaults.headers.common['X-CSRF-TOKEN'] = token.content;
++} else {
++    console.error('CSRF token not found: https://laravel.com/docs/csrf#csrf-x-csrf-token');
++}
++
++/**
++ * Echo exposes an expressive API for subscribing to channels and listening
++ * for events that are broadcast by Laravel. Echo and event broadcasting
++ * allows your team to easily build robust real-time web applications.
++ */
++
++// import Echo from 'laravel-echo'
++
++// window.Pusher = require('pusher-js');
++
++// window.Echo = new Echo({
++//     broadcaster: 'pusher',
++//     key: 'your-pusher-key'
++// });
+diff --git a/LaravelDiffApp/resources/assets/js/components/Example.vue b/LaravelDiffApp/resources/assets/js/components/Example.vue
+new file mode 100644
+index 0000000..601e61c
+--- /dev/null
++++ b/LaravelDiffApp/resources/assets/js/components/Example.vue
+@@ -0,0 +1,23 @@
++<template>
++    <div class="container">
++        <div class="row">
++            <div class="col-md-8 col-md-offset-2">
++                <div class="panel panel-default">
++                    <div class="panel-heading">Example Component</div>
++
++                    <div class="panel-body">
++                        I'm an example component!
++                    </div>
++                </div>
++            </div>
++        </div>
++    </div>
++</template>
++
++<script>
++    export default {
++        mounted() {
++            console.log('Component mounted.')
++        }
++    }
++</script>
+diff --git a/LaravelDiffApp/resources/assets/sass/_variables.scss b/LaravelDiffApp/resources/assets/sass/_variables.scss
+new file mode 100644
+index 0000000..53202ac
+--- /dev/null
++++ b/LaravelDiffApp/resources/assets/sass/_variables.scss
+@@ -0,0 +1,38 @@
++
++// Body
++$body-bg: #f5f8fa;
++
++// Borders
++$laravel-border-color: darken($body-bg, 10%);
++$list-group-border: $laravel-border-color;
++$navbar-default-border: $laravel-border-color;
++$panel-default-border: $laravel-border-color;
++$panel-inner-border: $laravel-border-color;
++
++// Brands
++$brand-primary: #3097D1;
++$brand-info: #8eb4cb;
++$brand-success: #2ab27b;
++$brand-warning: #cbb956;
++$brand-danger: #bf5329;
++
++// Typography
++$icon-font-path: "~bootstrap-sass/assets/fonts/bootstrap/";
++$font-family-sans-serif: "Raleway", sans-serif;
++$font-size-base: 14px;
++$line-height-base: 1.6;
++$text-color: #636b6f;
++
++// Navbar
++$navbar-default-bg: #fff;
++
++// Buttons
++$btn-default-color: $text-color;
++
++// Inputs
++$input-border: lighten($text-color, 40%);
++$input-border-focus: lighten($brand-primary, 25%);
++$input-color-placeholder: lighten($text-color, 30%);
++
++// Panels
++$panel-default-heading-bg: #fff;
+diff --git a/LaravelDiffApp/resources/assets/sass/app.scss b/LaravelDiffApp/resources/assets/sass/app.scss
+index bb76e29..63633fc 100644
+--- a/LaravelDiffApp/resources/assets/sass/app.scss
++++ b/LaravelDiffApp/resources/assets/sass/app.scss
+@@ -1,2 +1,9 @@
+-// @import "node_modules/bootstrap-sass/assets/stylesheets/bootstrap";
+ 
++// Fonts
++@import url("https://fonts.googleapis.com/css?family=Raleway:300,400,600");
++
++// Variables
++@import "variables";
++
++// Bootstrap
++@import "node_modules/bootstrap-sass/assets/stylesheets/bootstrap";
+diff --git a/LaravelDiffApp/resources/lang/en/pagination.php b/LaravelDiffApp/resources/lang/en/pagination.php
+index fcab34b..d481411 100644
+--- a/LaravelDiffApp/resources/lang/en/pagination.php
++++ b/LaravelDiffApp/resources/lang/en/pagination.php
+@@ -14,6 +14,6 @@ return [
+     */
+ 
+     'previous' => '&laquo; Previous',
+-    'next'     => 'Next &raquo;',
++    'next' => 'Next &raquo;',
+ 
+ ];
+diff --git a/LaravelDiffApp/resources/lang/en/passwords.php b/LaravelDiffApp/resources/lang/en/passwords.php
+index e6f3a67..e5544d2 100644
+--- a/LaravelDiffApp/resources/lang/en/passwords.php
++++ b/LaravelDiffApp/resources/lang/en/passwords.php
+@@ -4,7 +4,7 @@ return [
+ 
+     /*
+     |--------------------------------------------------------------------------
+-    | Password Reminder Language Lines
++    | Password Reset Language Lines
+     |--------------------------------------------------------------------------
+     |
+     | The following language lines are the default lines which match reasons
+diff --git a/LaravelDiffApp/resources/lang/en/validation.php b/LaravelDiffApp/resources/lang/en/validation.php
+index c7a1ecf..edc036d 100644
+--- a/LaravelDiffApp/resources/lang/en/validation.php
++++ b/LaravelDiffApp/resources/lang/en/validation.php
+@@ -16,11 +16,13 @@ return [
+     'accepted'             => 'The :attribute must be accepted.',
+     'active_url'           => 'The :attribute is not a valid URL.',
+     'after'                => 'The :attribute must be a date after :date.',
++    'after_or_equal'       => 'The :attribute must be a date after or equal to :date.',
+     'alpha'                => 'The :attribute may only contain letters.',
+     'alpha_dash'           => 'The :attribute may only contain letters, numbers, and dashes.',
+     'alpha_num'            => 'The :attribute may only contain letters and numbers.',
+     'array'                => 'The :attribute must be an array.',
+     'before'               => 'The :attribute must be a date before :date.',
++    'before_or_equal'      => 'The :attribute must be a date before or equal to :date.',
+     'between'              => [
+         'numeric' => 'The :attribute must be between :min and :max.',
+         'file'    => 'The :attribute must be between :min and :max kilobytes.',
+@@ -34,13 +36,19 @@ return [
+     'different'            => 'The :attribute and :other must be different.',
+     'digits'               => 'The :attribute must be :digits digits.',
+     'digits_between'       => 'The :attribute must be between :min and :max digits.',
++    'dimensions'           => 'The :attribute has invalid image dimensions.',
++    'distinct'             => 'The :attribute field has a duplicate value.',
+     'email'                => 'The :attribute must be a valid email address.',
+     'exists'               => 'The selected :attribute is invalid.',
+-    'filled'               => 'The :attribute field is required.',
++    'file'                 => 'The :attribute must be a file.',
++    'filled'               => 'The :attribute field must have a value.',
+     'image'                => 'The :attribute must be an image.',
+     'in'                   => 'The selected :attribute is invalid.',
++    'in_array'             => 'The :attribute field does not exist in :other.',
+     'integer'              => 'The :attribute must be an integer.',
+     'ip'                   => 'The :attribute must be a valid IP address.',
++    'ipv4'                 => 'The :attribute must be a valid IPv4 address.',
++    'ipv6'                 => 'The :attribute must be a valid IPv6 address.',
+     'json'                 => 'The :attribute must be a valid JSON string.',
+     'max'                  => [
+         'numeric' => 'The :attribute may not be greater than :max.',
+@@ -49,6 +57,7 @@ return [
+         'array'   => 'The :attribute may not have more than :max items.',
+     ],
+     'mimes'                => 'The :attribute must be a file of type: :values.',
++    'mimetypes'            => 'The :attribute must be a file of type: :values.',
+     'min'                  => [
+         'numeric' => 'The :attribute must be at least :min.',
+         'file'    => 'The :attribute must be at least :min kilobytes.',
+@@ -57,9 +66,11 @@ return [
+     ],
+     'not_in'               => 'The selected :attribute is invalid.',
+     'numeric'              => 'The :attribute must be a number.',
++    'present'              => 'The :attribute field must be present.',
+     'regex'                => 'The :attribute format is invalid.',
+     'required'             => 'The :attribute field is required.',
+     'required_if'          => 'The :attribute field is required when :other is :value.',
++    'required_unless'      => 'The :attribute field is required unless :other is in :values.',
+     'required_with'        => 'The :attribute field is required when :values is present.',
+     'required_with_all'    => 'The :attribute field is required when :values is present.',
+     'required_without'     => 'The :attribute field is required when :values is not present.',
+@@ -74,6 +85,7 @@ return [
+     'string'               => 'The :attribute must be a string.',
+     'timezone'             => 'The :attribute must be a valid zone.',
+     'unique'               => 'The :attribute has already been taken.',
++    'uploaded'             => 'The :attribute failed to upload.',
+     'url'                  => 'The :attribute format is invalid.',
+ 
+     /*
+diff --git a/LaravelDiffApp/resources/views/errors/503.blade.php b/LaravelDiffApp/resources/views/errors/503.blade.php
+deleted file mode 100644
+index 4a41505..0000000
+--- a/LaravelDiffApp/resources/views/errors/503.blade.php
++++ /dev/null
+@@ -1,47 +0,0 @@
+-<!DOCTYPE html>
+-<html>
+-    <head>
+-        <title>Be right back.</title>
+-
+-        <link href="https://fonts.googleapis.com/css?family=Lato:100" rel="stylesheet" type="text/css">
+-
+-        <style>
+-            html, body {
+-                height: 100%;
+-            }
+-
+-            body {
+-                margin: 0;
+-                padding: 0;
+-                width: 100%;
+-                color: #B0BEC5;
+-                display: table;
+-                font-weight: 100;
+-                font-family: 'Lato';
+-            }
+-
+-            .container {
+-                text-align: center;
+-                display: table-cell;
+-                vertical-align: middle;
+-            }
+-
+-            .content {
+-                text-align: center;
+-                display: inline-block;
+-            }
+-
+-            .title {
+-                font-size: 72px;
+-                margin-bottom: 40px;
+-            }
+-        </style>
+-    </head>
+-    <body>
+-        <div class="container">
+-            <div class="content">
+-                <div class="title">Be right back.</div>
+-            </div>
+-        </div>
+-    </body>
+-</html>
+diff --git a/LaravelDiffApp/resources/views/vendor/.gitkeep b/LaravelDiffApp/resources/views/vendor/.gitkeep
+deleted file mode 100644
+index e69de29..0000000
+diff --git a/LaravelDiffApp/resources/views/welcome.blade.php b/LaravelDiffApp/resources/views/welcome.blade.php
+index 87710ac..606e59e 100644
+--- a/LaravelDiffApp/resources/views/welcome.blade.php
++++ b/LaravelDiffApp/resources/views/welcome.blade.php
+@@ -1,44 +1,94 @@
+-<!DOCTYPE html>
+-<html>
++<!doctype html>
++<html lang="{{ app()->getLocale() }}">
+     <head>
++        <meta charset="utf-8">
++        <meta http-equiv="X-UA-Compatible" content="IE=edge">
++        <meta name="viewport" content="width=device-width, initial-scale=1">
++
+         <title>Laravel</title>
+ 
+-        <link href="https://fonts.googleapis.com/css?family=Lato:100" rel="stylesheet" type="text/css">
++        <!-- Fonts -->
++        <link href="https://fonts.googleapis.com/css?family=Raleway:100,600" rel="stylesheet" type="text/css">
+ 
++        <!-- Styles -->
+         <style>
+             html, body {
+-                height: 100%;
++                background-color: #fff;
++                color: #636b6f;
++                font-family: 'Raleway', sans-serif;
++                font-weight: 100;
++                height: 100vh;
++                margin: 0;
+             }
+ 
+-            body {
+-                margin: 0;
+-                padding: 0;
+-                width: 100%;
+-                display: table;
+-                font-weight: 100;
+-                font-family: 'Lato';
++            .full-height {
++                height: 100vh;
+             }
+ 
+-            .container {
+-                text-align: center;
+-                display: table-cell;
+-                vertical-align: middle;
++            .flex-center {
++                align-items: center;
++                display: flex;
++                justify-content: center;
++            }
++
++            .position-ref {
++                position: relative;
++            }
++
++            .top-right {
++                position: absolute;
++                right: 10px;
++                top: 18px;
+             }
+ 
+             .content {
+                 text-align: center;
+-                display: inline-block;
+             }
+ 
+             .title {
+-                font-size: 96px;
++                font-size: 84px;
++            }
++
++            .links > a {
++                color: #636b6f;
++                padding: 0 25px;
++                font-size: 12px;
++                font-weight: 600;
++                letter-spacing: .1rem;
++                text-decoration: none;
++                text-transform: uppercase;
++            }
++
++            .m-b-md {
++                margin-bottom: 30px;
+             }
+         </style>
+     </head>
+     <body>
+-        <div class="container">
++        <div class="flex-center position-ref full-height">
++            @if (Route::has('login'))
++                <div class="top-right links">
++                    @if (Auth::check())
++                        <a href="{{ url('/home') }}">Home</a>
++                    @else
++                        <a href="{{ url('/login') }}">Login</a>
++                        <a href="{{ url('/register') }}">Register</a>
++                    @endif
++                </div>
++            @endif
++
+             <div class="content">
+-                <div class="title">Laravel 5</div>
++                <div class="title m-b-md">
++                    Laravel
++                </div>
++
++                <div class="links">
++                    <a href="https://laravel.com/docs">Documentation</a>
++                    <a href="https://laracasts.com">Laracasts</a>
++                    <a href="https://laravel-news.com">News</a>
++                    <a href="https://forge.laravel.com">Forge</a>
++                    <a href="https://github.com/laravel/laravel">GitHub</a>
++                </div>
+             </div>
+         </div>
+     </body>
+diff --git a/LaravelDiffApp/routes/api.php b/LaravelDiffApp/routes/api.php
+new file mode 100644
+index 0000000..c641ca5
+--- /dev/null
++++ b/LaravelDiffApp/routes/api.php
+@@ -0,0 +1,18 @@
++<?php
++
++use Illuminate\Http\Request;
++
++/*
++|--------------------------------------------------------------------------
++| API Routes
++|--------------------------------------------------------------------------
++|
++| Here is where you can register API routes for your application. These
++| routes are loaded by the RouteServiceProvider within a group which
++| is assigned the "api" middleware group. Enjoy building your API!
++|
++*/
++
++Route::middleware('auth:api')->get('/user', function (Request $request) {
++    return $request->user();
++});
+diff --git a/LaravelDiffApp/routes/channels.php b/LaravelDiffApp/routes/channels.php
+new file mode 100644
+index 0000000..f16a20b
+--- /dev/null
++++ b/LaravelDiffApp/routes/channels.php
+@@ -0,0 +1,16 @@
++<?php
++
++/*
++|--------------------------------------------------------------------------
++| Broadcast Channels
++|--------------------------------------------------------------------------
++|
++| Here you may register all of the event broadcasting channels that your
++| application supports. The given channel authorization callbacks are
++| used to check if an authenticated user can listen to the channel.
++|
++*/
++
++Broadcast::channel('App.User.{id}', function ($user, $id) {
++    return (int) $user->id === (int) $id;
++});
+diff --git a/LaravelDiffApp/routes/console.php b/LaravelDiffApp/routes/console.php
+new file mode 100644
+index 0000000..75dd0cd
+--- /dev/null
++++ b/LaravelDiffApp/routes/console.php
+@@ -0,0 +1,18 @@
++<?php
++
++use Illuminate\Foundation\Inspiring;
++
++/*
++|--------------------------------------------------------------------------
++| Console Routes
++|--------------------------------------------------------------------------
++|
++| This file is where you may define all of your Closure based console
++| commands. Each Closure is bound to a command instance allowing a
++| simple approach to interacting with each command's IO methods.
++|
++*/
++
++Artisan::command('inspire', function () {
++    $this->comment(Inspiring::quote());
++})->describe('Display an inspiring quote');
+diff --git a/LaravelDiffApp/app/Http/routes.php b/LaravelDiffApp/routes/web.php
+similarity index 50%
+rename from LaravelDiffApp/app/Http/routes.php
+rename to LaravelDiffApp/routes/web.php
+index 1ad3549..810aa34 100644
+--- a/LaravelDiffApp/app/Http/routes.php
++++ b/LaravelDiffApp/routes/web.php
+@@ -2,12 +2,12 @@
+ 
+ /*
+ |--------------------------------------------------------------------------
+-| Application Routes
++| Web Routes
+ |--------------------------------------------------------------------------
+ |
+-| Here is where you can register all of the routes for an application.
+-| It's a breeze. Simply tell Laravel the URIs it should respond to
+-| and give it the controller to call when that URI is requested.
++| Here is where you can register web routes for your application. These
++| routes are loaded by the RouteServiceProvider within a group which
++| contains the "web" middleware group. Now create something great!
+ |
+ */
+ 
+diff --git a/LaravelDiffApp/server.php b/LaravelDiffApp/server.php
+index f65c7c4..5fb6379 100644
+--- a/LaravelDiffApp/server.php
++++ b/LaravelDiffApp/server.php
+@@ -4,7 +4,7 @@
+  * Laravel - A PHP Framework For Web Artisans
+  *
+  * @package  Laravel
+- * @author   Taylor Otwell <taylorotwell@gmail.com>
++ * @author   Taylor Otwell <taylor@laravel.com>
+  */
+ 
+ $uri = urldecode(
+diff --git a/LaravelDiffApp/storage/app/.gitignore b/LaravelDiffApp/storage/app/.gitignore
+index c96a04f..8f4803c 100644
+--- a/LaravelDiffApp/storage/app/.gitignore
++++ b/LaravelDiffApp/storage/app/.gitignore
+@@ -1,2 +1,3 @@
+ *
+-!.gitignore
+\ No newline at end of file
++!public/
++!.gitignore
+diff --git a/LaravelDiffApp/storage/app/public/.gitignore b/LaravelDiffApp/storage/app/public/.gitignore
+new file mode 100644
+index 0000000..d6b7ef3
+--- /dev/null
++++ b/LaravelDiffApp/storage/app/public/.gitignore
+@@ -0,0 +1,2 @@
++*
++!.gitignore
+diff --git a/LaravelDiffApp/storage/framework/.gitignore b/LaravelDiffApp/storage/framework/.gitignore
+index 953edb7..b02b700 100644
+--- a/LaravelDiffApp/storage/framework/.gitignore
++++ b/LaravelDiffApp/storage/framework/.gitignore
+@@ -1,5 +1,6 @@
+ config.php
+ routes.php
++schedule-*
+ compiled.php
+ services.json
+ events.scanned.php
+diff --git a/LaravelDiffApp/storage/framework/cache/.gitignore b/LaravelDiffApp/storage/framework/cache/.gitignore
+index c96a04f..d6b7ef3 100644
+--- a/LaravelDiffApp/storage/framework/cache/.gitignore
++++ b/LaravelDiffApp/storage/framework/cache/.gitignore
+@@ -1,2 +1,2 @@
+ *
+-!.gitignore
+\ No newline at end of file
++!.gitignore
+diff --git a/LaravelDiffApp/storage/framework/testing/.gitignore b/LaravelDiffApp/storage/framework/testing/.gitignore
+new file mode 100644
+index 0000000..d6b7ef3
+--- /dev/null
++++ b/LaravelDiffApp/storage/framework/testing/.gitignore
+@@ -0,0 +1,2 @@
++*
++!.gitignore
+diff --git a/LaravelDiffApp/tests/CreatesApplication.php b/LaravelDiffApp/tests/CreatesApplication.php
+new file mode 100644
+index 0000000..547152f
+--- /dev/null
++++ b/LaravelDiffApp/tests/CreatesApplication.php
+@@ -0,0 +1,22 @@
++<?php
++
++namespace Tests;
++
++use Illuminate\Contracts\Console\Kernel;
++
++trait CreatesApplication
++{
++    /**
++     * Creates the application.
++     *
++     * @return \Illuminate\Foundation\Application
++     */
++    public function createApplication()
++    {
++        $app = require __DIR__.'/../bootstrap/app.php';
++
++        $app->make(Kernel::class)->bootstrap();
++
++        return $app;
++    }
++}
+diff --git a/LaravelDiffApp/tests/ExampleTest.php b/LaravelDiffApp/tests/Feature/ExampleTest.php
+similarity index 58%
+rename from LaravelDiffApp/tests/ExampleTest.php
+rename to LaravelDiffApp/tests/Feature/ExampleTest.php
+index 7e81d37..486dc27 100644
+--- a/LaravelDiffApp/tests/ExampleTest.php
++++ b/LaravelDiffApp/tests/Feature/ExampleTest.php
+@@ -1,5 +1,8 @@
+ <?php
+ 
++namespace Tests\Feature;
++
++use Tests\TestCase;
+ use Illuminate\Foundation\Testing\WithoutMiddleware;
+ use Illuminate\Foundation\Testing\DatabaseMigrations;
+ use Illuminate\Foundation\Testing\DatabaseTransactions;
+@@ -7,13 +10,14 @@ use Illuminate\Foundation\Testing\DatabaseTransactions;
+ class ExampleTest extends TestCase
+ {
+     /**
+-     * A basic functional test example.
++     * A basic test example.
+      *
+      * @return void
+      */
+-    public function testBasicExample()
++    public function testBasicTest()
+     {
+-        $this->visit('/')
+-             ->see('Laravel 5');
++        $response = $this->get('/');
++
++        $response->assertStatus(200);
+     }
+ }
+diff --git a/LaravelDiffApp/tests/TestCase.php b/LaravelDiffApp/tests/TestCase.php
+index 8578b17..2932d4a 100644
+--- a/LaravelDiffApp/tests/TestCase.php
++++ b/LaravelDiffApp/tests/TestCase.php
+@@ -1,25 +1,10 @@
+ <?php
+ 
+-class TestCase extends Illuminate\Foundation\Testing\TestCase
+-{
+-    /**
+-     * The base URL to use while testing the application.
+-     *
+-     * @var string
+-     */
+-    protected $baseUrl = 'http://localhost';
+-
+-    /**
+-     * Creates the application.
+-     *
+-     * @return \Illuminate\Foundation\Application
+-     */
+-    public function createApplication()
+-    {
+-        $app = require __DIR__.'/../bootstrap/app.php';
++namespace Tests;
+ 
+-        $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
++use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
+ 
+-        return $app;
+-    }
++abstract class TestCase extends BaseTestCase
++{
++    use CreatesApplication;
+ }
+diff --git a/LaravelDiffApp/tests/Unit/ExampleTest.php b/LaravelDiffApp/tests/Unit/ExampleTest.php
+new file mode 100644
+index 0000000..5663bb4
+--- /dev/null
++++ b/LaravelDiffApp/tests/Unit/ExampleTest.php
+@@ -0,0 +1,20 @@
++<?php
++
++namespace Tests\Unit;
++
++use Tests\TestCase;
++use Illuminate\Foundation\Testing\DatabaseMigrations;
++use Illuminate\Foundation\Testing\DatabaseTransactions;
++
++class ExampleTest extends TestCase
++{
++    /**
++     * A basic test example.
++     *
++     * @return void
++     */
++    public function testBasicTest()
++    {
++        $this->assertTrue(true);
++    }
++}
+diff --git a/LaravelDiffApp/webpack.mix.js b/LaravelDiffApp/webpack.mix.js
+new file mode 100644
+index 0000000..72fdbb1
+--- /dev/null
++++ b/LaravelDiffApp/webpack.mix.js
+@@ -0,0 +1,15 @@
++let mix = require('laravel-mix');
++
++/*
++ |--------------------------------------------------------------------------
++ | Mix Asset Management
++ |--------------------------------------------------------------------------
++ |
++ | Mix provides a clean, fluent API for defining some Webpack build steps
++ | for your Laravel application. By default, we are compiling the Sass
++ | file for the application as well as bundling up all the JS files.
++ |
++ */
++
++mix.js('resources/assets/js/app.js', 'public/js')
++   .sass('resources/assets/sass/app.scss', 'public/css');

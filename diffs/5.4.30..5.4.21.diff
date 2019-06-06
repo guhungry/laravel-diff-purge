@@ -1,0 +1,168 @@
+diff --git a/LaravelDiffApp/.gitignore b/LaravelDiffApp/.gitignore
+index b6a4b86..2a41229 100644
+--- a/LaravelDiffApp/.gitignore
++++ b/LaravelDiffApp/.gitignore
+@@ -8,5 +8,4 @@
+ Homestead.json
+ Homestead.yaml
+ npm-debug.log
+-yarn-error.log
+ .env
+diff --git a/LaravelDiffApp/app/Http/Controllers/Auth/RegisterController.php b/LaravelDiffApp/app/Http/Controllers/Auth/RegisterController.php
+index f77265a..ed8d1b7 100644
+--- a/LaravelDiffApp/app/Http/Controllers/Auth/RegisterController.php
++++ b/LaravelDiffApp/app/Http/Controllers/Auth/RegisterController.php
+@@ -58,7 +58,7 @@ class RegisterController extends Controller
+      * Create a new user instance after a valid registration.
+      *
+      * @param  array  $data
+-     * @return \App\User
++     * @return User
+      */
+     protected function create(array $data)
+     {
+diff --git a/LaravelDiffApp/config/database.php b/LaravelDiffApp/config/database.php
+index cab5d06..a196943 100644
+--- a/LaravelDiffApp/config/database.php
++++ b/LaravelDiffApp/config/database.php
+@@ -67,17 +67,6 @@ return [
+             'sslmode' => 'prefer',
+         ],
+ 
+-        'sqlsrv' => [
+-            'driver' => 'sqlsrv',
+-            'host' => env('DB_HOST', 'localhost'),
+-            'port' => env('DB_PORT', '1433'),
+-            'database' => env('DB_DATABASE', 'forge'),
+-            'username' => env('DB_USERNAME', 'forge'),
+-            'password' => env('DB_PASSWORD', ''),
+-            'charset' => 'utf8',
+-            'prefix' => '',
+-        ],
+-
+     ],
+ 
+     /*
+diff --git a/LaravelDiffApp/package.json b/LaravelDiffApp/package.json
+index 630a244..83294b6 100644
+--- a/LaravelDiffApp/package.json
++++ b/LaravelDiffApp/package.json
+@@ -10,11 +10,11 @@
+     "production": "cross-env NODE_ENV=production node_modules/webpack/bin/webpack.js --progress --hide-modules --config=node_modules/laravel-mix/setup/webpack.config.js"
+   },
+   "devDependencies": {
+-    "axios": "^0.16.2",
++    "axios": "^0.15.3",
+     "bootstrap-sass": "^3.3.7",
+-    "cross-env": "^5.0.1",
++    "cross-env": "^3.2.3",
+     "jquery": "^3.1.1",
+-    "laravel-mix": "^1.0",
++    "laravel-mix": "0.*",
+     "lodash": "^4.17.4",
+     "vue": "^2.1.10"
+   }
+diff --git a/LaravelDiffApp/phpunit.xml b/LaravelDiffApp/phpunit.xml
+index 9ecda83..a2c496e 100644
+--- a/LaravelDiffApp/phpunit.xml
++++ b/LaravelDiffApp/phpunit.xml
+@@ -9,11 +9,11 @@
+          processIsolation="false"
+          stopOnFailure="false">
+     <testsuites>
+-        <testsuite name="Feature">
++        <testsuite name="Feature Tests">
+             <directory suffix="Test.php">./tests/Feature</directory>
+         </testsuite>
+ 
+-        <testsuite name="Unit">
++        <testsuite name="Unit Tests">
+             <directory suffix="Test.php">./tests/Unit</directory>
+         </testsuite>
+     </testsuites>
+diff --git a/LaravelDiffApp/readme.md b/LaravelDiffApp/readme.md
+index 2fd50b6..b2c477c 100644
+--- a/LaravelDiffApp/readme.md
++++ b/LaravelDiffApp/readme.md
+@@ -35,6 +35,7 @@ We would like to extend our thanks to the following sponsors for helping fund on
+ - **[Tighten Co.](https://tighten.co)**
+ - **[British Software Development](https://www.britishsoftware.co)**
+ - **[Styde](https://styde.net)**
++- **[Codecourse](https://www.codecourse.com)**
+ - [Fragrantica](https://www.fragrantica.com)
+ - [SOFTonSOFA](https://softonsofa.com/)
+ 
+diff --git a/LaravelDiffApp/resources/assets/js/bootstrap.js b/LaravelDiffApp/resources/assets/js/bootstrap.js
+index 8e0f04e..b5d2602 100644
+--- a/LaravelDiffApp/resources/assets/js/bootstrap.js
++++ b/LaravelDiffApp/resources/assets/js/bootstrap.js
+@@ -21,22 +21,9 @@ try {
+ 
+ window.axios = require('axios');
+ 
++window.axios.defaults.headers.common['X-CSRF-TOKEN'] = window.Laravel.csrfToken;
+ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
+ 
+-/**
+- * Next we will register the CSRF Token as a common header with Axios so that
+- * all outgoing HTTP requests automatically have it attached. This is just
+- * a simple convenience so we don't have to attach every token manually.
+- */
+-
+-let token = document.head.querySelector('meta[name="csrf-token"]');
+-
+-if (token) {
+-    window.axios.defaults.headers.common['X-CSRF-TOKEN'] = token.content;
+-} else {
+-    console.error('CSRF token not found: https://laravel.com/docs/csrf#csrf-x-csrf-token');
+-}
+-
+ /**
+  * Echo exposes an expressive API for subscribing to channels and listening
+  * for events that are broadcast by Laravel. Echo and event broadcasting
+diff --git a/LaravelDiffApp/resources/assets/sass/app.scss b/LaravelDiffApp/resources/assets/sass/app.scss
+index 63633fc..35ce2dc 100644
+--- a/LaravelDiffApp/resources/assets/sass/app.scss
++++ b/LaravelDiffApp/resources/assets/sass/app.scss
+@@ -1,6 +1,6 @@
+ 
+ // Fonts
+-@import url("https://fonts.googleapis.com/css?family=Raleway:300,400,600");
++@import url(https://fonts.googleapis.com/css?family=Raleway:300,400,600);
+ 
+ // Variables
+ @import "variables";
+diff --git a/LaravelDiffApp/resources/lang/en/validation.php b/LaravelDiffApp/resources/lang/en/validation.php
+index edc036d..2a5c743 100644
+--- a/LaravelDiffApp/resources/lang/en/validation.php
++++ b/LaravelDiffApp/resources/lang/en/validation.php
+@@ -47,8 +47,6 @@ return [
+     'in_array'             => 'The :attribute field does not exist in :other.',
+     'integer'              => 'The :attribute must be an integer.',
+     'ip'                   => 'The :attribute must be a valid IP address.',
+-    'ipv4'                 => 'The :attribute must be a valid IPv4 address.',
+-    'ipv6'                 => 'The :attribute must be a valid IPv6 address.',
+     'json'                 => 'The :attribute must be a valid JSON string.',
+     'max'                  => [
+         'numeric' => 'The :attribute may not be greater than :max.',
+diff --git a/LaravelDiffApp/resources/views/welcome.blade.php b/LaravelDiffApp/resources/views/welcome.blade.php
+index 606e59e..cbb9ce8 100644
+--- a/LaravelDiffApp/resources/views/welcome.blade.php
++++ b/LaravelDiffApp/resources/views/welcome.blade.php
+@@ -1,5 +1,5 @@
+ <!doctype html>
+-<html lang="{{ app()->getLocale() }}">
++<html lang="{{ config('app.locale') }}">
+     <head>
+         <meta charset="utf-8">
+         <meta http-equiv="X-UA-Compatible" content="IE=edge">
+diff --git a/LaravelDiffApp/webpack.mix.js b/LaravelDiffApp/webpack.mix.js
+index 72fdbb1..3e6f571 100644
+--- a/LaravelDiffApp/webpack.mix.js
++++ b/LaravelDiffApp/webpack.mix.js
+@@ -1,4 +1,4 @@
+-let mix = require('laravel-mix');
++const { mix } = require('laravel-mix');
+ 
+ /*
+  |--------------------------------------------------------------------------

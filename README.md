@@ -5,8 +5,9 @@ This repository exposes an untouched Laravel app generated with the CLI
 
 ## Diff table
 
-| From->To | D   | I   | F   | F   | S   |     | =   | =   |     | F   | U   | N   |
-| -------- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 5.4.0    | X   |     |     |     |     |     |     |     |     |     |     |     |
+| From->To | P                                                                                              | U   | R   | G   | E   |     | T   | I   | M   | E   | !   | !   |
+| -------- | ---------------------------------------------------------------------------------------------- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 5.4.3    | X                                                                                              | -   |     |     |     |     |     |     |     |     |     |     |
+| 5.4.0    | [->5.4.3](https://github.com/guhungry/laravel-diff-purge/compare/release/5.4.0..release/5.4.3) | X   |     |     |     |     |     |     |     |     |     |     |
 
 ## To see the full table containing all releases click [HERE](https://github.com/guhungry/laravel-diff-purge/)

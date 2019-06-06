@@ -1,0 +1,276 @@
+diff --git a/LaravelDiffApp/.env.example b/LaravelDiffApp/.env.example
+index d445610..38d1171 100644
+--- a/LaravelDiffApp/.env.example
++++ b/LaravelDiffApp/.env.example
+@@ -27,6 +27,6 @@ MAIL_USERNAME=null
+ MAIL_PASSWORD=null
+ MAIL_ENCRYPTION=null
+ 
+-PUSHER_APP_ID=
+ PUSHER_KEY=
+ PUSHER_SECRET=
++PUSHER_APP_ID=
+diff --git a/LaravelDiffApp/app/Http/Controllers/Auth/LoginController.php b/LaravelDiffApp/app/Http/Controllers/Auth/LoginController.php
+index 7594953..2abd9e0 100644
+--- a/LaravelDiffApp/app/Http/Controllers/Auth/LoginController.php
++++ b/LaravelDiffApp/app/Http/Controllers/Auth/LoginController.php
+@@ -21,7 +21,7 @@ class LoginController extends Controller
+     use AuthenticatesUsers;
+ 
+     /**
+-     * Where to redirect users after login.
++     * Where to redirect users after login / registration.
+      *
+      * @var string
+      */
+diff --git a/LaravelDiffApp/app/Providers/RouteServiceProvider.php b/LaravelDiffApp/app/Providers/RouteServiceProvider.php
+index 87ffb05..7e6b14f 100644
+--- a/LaravelDiffApp/app/Providers/RouteServiceProvider.php
++++ b/LaravelDiffApp/app/Providers/RouteServiceProvider.php
+@@ -35,10 +35,10 @@ class RouteServiceProvider extends ServiceProvider
+      */
+     public function map()
+     {
+-        $this->mapApiRoutes();
+-
+         $this->mapWebRoutes();
+ 
++        $this->mapApiRoutes();
++
+         //
+     }
+ 
+diff --git a/LaravelDiffApp/config/app.php b/LaravelDiffApp/config/app.php
+index 717ee98..adae4e0 100644
+--- a/LaravelDiffApp/config/app.php
++++ b/LaravelDiffApp/config/app.php
+@@ -12,7 +12,7 @@ return [
+     | any other location as required by the application or its packages.
+     */
+ 
+-    'name' => 'Laravel',
++    'name' => 'My Application',
+ 
+     /*
+     |--------------------------------------------------------------------------
+@@ -173,8 +173,8 @@ return [
+          * Application Service Providers...
+          */
+         App\Providers\AppServiceProvider::class,
+-        App\Providers\AuthServiceProvider::class,
+         // App\Providers\BroadcastServiceProvider::class,
++        App\Providers\AuthServiceProvider::class,
+         App\Providers\EventServiceProvider::class,
+         App\Providers\RouteServiceProvider::class,
+ 
+@@ -197,7 +197,6 @@ return [
+         'Artisan' => Illuminate\Support\Facades\Artisan::class,
+         'Auth' => Illuminate\Support\Facades\Auth::class,
+         'Blade' => Illuminate\Support\Facades\Blade::class,
+-        'Bus' => Illuminate\Support\Facades\Bus::class,
+         'Cache' => Illuminate\Support\Facades\Cache::class,
+         'Config' => Illuminate\Support\Facades\Config::class,
+         'Cookie' => Illuminate\Support\Facades\Cookie::class,
+diff --git a/LaravelDiffApp/config/auth.php b/LaravelDiffApp/config/auth.php
+index 7817501..a57bdc7 100644
+--- a/LaravelDiffApp/config/auth.php
++++ b/LaravelDiffApp/config/auth.php
+@@ -81,6 +81,10 @@ return [
+     | Resetting Passwords
+     |--------------------------------------------------------------------------
+     |
++    | Here you may set the options for resetting passwords including the view
++    | that is your password reset e-mail. You may also set the name of the
++    | table that maintains all of the reset tokens for your application.
++    |
+     | You may specify multiple password reset configurations if you have more
+     | than one user table or model in the application and you want to have
+     | separate password reset settings based on the specific user types.
+diff --git a/LaravelDiffApp/config/cache.php b/LaravelDiffApp/config/cache.php
+index 1d3de87..7e9c8d1 100644
+--- a/LaravelDiffApp/config/cache.php
++++ b/LaravelDiffApp/config/cache.php
+@@ -52,11 +52,11 @@ return [
+         'memcached' => [
+             'driver' => 'memcached',
+             'persistent_id' => env('MEMCACHED_PERSISTENT_ID'),
+-            'sasl' => [
++            'sasl'       => [
+                 env('MEMCACHED_USERNAME'),
+                 env('MEMCACHED_PASSWORD'),
+             ],
+-            'options' => [
++            'options'    => [
+                 // Memcached::OPT_CONNECT_TIMEOUT  => 2000,
+             ],
+             'servers' => [
+diff --git a/LaravelDiffApp/config/session.php b/LaravelDiffApp/config/session.php
+index e2779ad..ace3ef0 100644
+--- a/LaravelDiffApp/config/session.php
++++ b/LaravelDiffApp/config/session.php
+@@ -161,7 +161,7 @@ return [
+     |
+     */
+ 
+-    'secure' => env('SESSION_SECURE_COOKIE', false),
++    'secure' => false,
+ 
+     /*
+     |--------------------------------------------------------------------------
+diff --git a/LaravelDiffApp/database/factories/ModelFactory.php b/LaravelDiffApp/database/factories/ModelFactory.php
+index e0dc869..5995164 100644
+--- a/LaravelDiffApp/database/factories/ModelFactory.php
++++ b/LaravelDiffApp/database/factories/ModelFactory.php
+@@ -16,7 +16,7 @@ $factory->define(App\User::class, function (Faker\Generator $faker) {
+ 
+     return [
+         'name' => $faker->name,
+-        'email' => $faker->unique()->safeEmail,
++        'email' => $faker->safeEmail,
+         'password' => $password ?: $password = bcrypt('secret'),
+         'remember_token' => str_random(10),
+     ];
+diff --git a/LaravelDiffApp/gulpfile.js b/LaravelDiffApp/gulpfile.js
+index 442dd3f..04d503d 100644
+--- a/LaravelDiffApp/gulpfile.js
++++ b/LaravelDiffApp/gulpfile.js
+@@ -1,6 +1,6 @@
+ const elixir = require('laravel-elixir');
+ 
+-require('laravel-elixir-vue-2');
++require('laravel-elixir-vue');
+ 
+ /*
+  |--------------------------------------------------------------------------
+diff --git a/LaravelDiffApp/package.json b/LaravelDiffApp/package.json
+index e9993aa..d490671 100644
+--- a/LaravelDiffApp/package.json
++++ b/LaravelDiffApp/package.json
+@@ -9,10 +9,10 @@
+     "gulp": "^3.9.1",
+     "jquery": "^3.1.0",
+     "laravel-elixir": "^6.0.0-9",
+-    "laravel-elixir-vue-2": "^0.2.0",
++    "laravel-elixir-vue": "^0.1.4",
+     "laravel-elixir-webpack-official": "^1.0.2",
+-    "lodash": "^4.16.2",
+-    "vue": "^2.0.1",
+-    "vue-resource": "^1.0.3"
++    "lodash": "^4.14.0",
++    "vue": "^1.0.26",
++    "vue-resource": "^0.9.3"
+   }
+ }
+diff --git a/LaravelDiffApp/public/web.config b/LaravelDiffApp/public/web.config
+deleted file mode 100644
+index 624c176..0000000
+--- a/LaravelDiffApp/public/web.config
++++ /dev/null
+@@ -1,23 +0,0 @@
+-<configuration>
+-  <system.webServer>
+-    <rewrite>
+-      <rules>
+-        <rule name="Imported Rule 1" stopProcessing="true">
+-          <match url="^(.*)/$" ignoreCase="false" />
+-          <conditions>
+-            <add input="{REQUEST_FILENAME}" matchType="IsDirectory" ignoreCase="false" negate="true" />
+-          </conditions>
+-          <action type="Redirect" redirectType="Permanent" url="/{R:1}" />
+-        </rule>
+-        <rule name="Imported Rule 2" stopProcessing="true">
+-          <match url="^" ignoreCase="false" />
+-          <conditions>
+-            <add input="{REQUEST_FILENAME}" matchType="IsDirectory" ignoreCase="false" negate="true" />
+-            <add input="{REQUEST_FILENAME}" matchType="IsFile" ignoreCase="false" negate="true" />
+-          </conditions>
+-          <action type="Rewrite" url="index.php" />
+-        </rule>
+-      </rules>
+-    </rewrite>
+-  </system.webServer>
+-</configuration>
+diff --git a/LaravelDiffApp/resources/assets/js/app.js b/LaravelDiffApp/resources/assets/js/app.js
+index a8eb8e2..87dd5ad 100644
+--- a/LaravelDiffApp/resources/assets/js/app.js
++++ b/LaravelDiffApp/resources/assets/js/app.js
+@@ -16,5 +16,5 @@ require('./bootstrap');
+ Vue.component('example', require('./components/Example.vue'));
+ 
+ const app = new Vue({
+-    el: '#app'
++    el: 'body'
+ });
+diff --git a/LaravelDiffApp/resources/assets/js/bootstrap.js b/LaravelDiffApp/resources/assets/js/bootstrap.js
+index a2f3529..3f4c5cf 100644
+--- a/LaravelDiffApp/resources/assets/js/bootstrap.js
++++ b/LaravelDiffApp/resources/assets/js/bootstrap.js
+@@ -26,7 +26,7 @@ require('vue-resource');
+  */
+ 
+ Vue.http.interceptors.push((request, next) => {
+-    request.headers.set('X-CSRF-TOKEN', Laravel.csrfToken);
++    request.headers['X-CSRF-TOKEN'] = Laravel.csrfToken;
+ 
+     next();
+ });
+diff --git a/LaravelDiffApp/resources/assets/js/components/Example.vue b/LaravelDiffApp/resources/assets/js/components/Example.vue
+index 86a0b70..067ef66 100644
+--- a/LaravelDiffApp/resources/assets/js/components/Example.vue
++++ b/LaravelDiffApp/resources/assets/js/components/Example.vue
+@@ -16,7 +16,7 @@
+ 
+ <script>
+     export default {
+-        mounted() {
++        ready() {
+             console.log('Component ready.')
+         }
+     }
+diff --git a/LaravelDiffApp/resources/assets/sass/_variables.scss b/LaravelDiffApp/resources/assets/sass/variables.scss
+similarity index 100%
+rename from LaravelDiffApp/resources/assets/sass/_variables.scss
+rename to LaravelDiffApp/resources/assets/sass/variables.scss
+diff --git a/LaravelDiffApp/resources/lang/en/validation.php b/LaravelDiffApp/resources/lang/en/validation.php
+index 73b49d0..28c6677 100644
+--- a/LaravelDiffApp/resources/lang/en/validation.php
++++ b/LaravelDiffApp/resources/lang/en/validation.php
+@@ -53,7 +53,6 @@ return [
+         'array'   => 'The :attribute may not have more than :max items.',
+     ],
+     'mimes'                => 'The :attribute must be a file of type: :values.',
+-    'mimetypes'            => 'The :attribute must be a file of type: :values.',
+     'min'                  => [
+         'numeric' => 'The :attribute must be at least :min.',
+         'file'    => 'The :attribute must be at least :min kilobytes.',
+@@ -81,7 +80,6 @@ return [
+     'string'               => 'The :attribute must be a string.',
+     'timezone'             => 'The :attribute must be a valid zone.',
+     'unique'               => 'The :attribute has already been taken.',
+-    'uploaded'             => 'The :attribute failed to upload.',
+     'url'                  => 'The :attribute format is invalid.',
+ 
+     /*
+diff --git a/LaravelDiffApp/resources/views/welcome.blade.php b/LaravelDiffApp/resources/views/welcome.blade.php
+index 50e048e..8cc3d8e 100644
+--- a/LaravelDiffApp/resources/views/welcome.blade.php
++++ b/LaravelDiffApp/resources/views/welcome.blade.php
+@@ -15,7 +15,7 @@
+             html, body {
+                 background-color: #fff;
+                 color: #636b6f;
+-                font-family: 'Raleway', sans-serif;
++                font-family: 'Raleway';
+                 font-weight: 100;
+                 height: 100vh;
+                 margin: 0;
+diff --git a/LaravelDiffApp/routes/console.php b/LaravelDiffApp/routes/console.php
+index 75dd0cd..eea1a86 100644
+--- a/LaravelDiffApp/routes/console.php
++++ b/LaravelDiffApp/routes/console.php
+@@ -15,4 +15,4 @@ use Illuminate\Foundation\Inspiring;
+ 
+ Artisan::command('inspire', function () {
+     $this->comment(Inspiring::quote());
+-})->describe('Display an inspiring quote');
++});

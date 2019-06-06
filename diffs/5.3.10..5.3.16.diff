@@ -1,0 +1,68 @@
+diff --git a/LaravelDiffApp/gulpfile.js b/LaravelDiffApp/gulpfile.js
+index 04d503d..442dd3f 100644
+--- a/LaravelDiffApp/gulpfile.js
++++ b/LaravelDiffApp/gulpfile.js
+@@ -1,6 +1,6 @@
+ const elixir = require('laravel-elixir');
+ 
+-require('laravel-elixir-vue');
++require('laravel-elixir-vue-2');
+ 
+ /*
+  |--------------------------------------------------------------------------
+diff --git a/LaravelDiffApp/package.json b/LaravelDiffApp/package.json
+index d490671..e9993aa 100644
+--- a/LaravelDiffApp/package.json
++++ b/LaravelDiffApp/package.json
+@@ -9,10 +9,10 @@
+     "gulp": "^3.9.1",
+     "jquery": "^3.1.0",
+     "laravel-elixir": "^6.0.0-9",
+-    "laravel-elixir-vue": "^0.1.4",
++    "laravel-elixir-vue-2": "^0.2.0",
+     "laravel-elixir-webpack-official": "^1.0.2",
+-    "lodash": "^4.14.0",
+-    "vue": "^1.0.26",
+-    "vue-resource": "^0.9.3"
++    "lodash": "^4.16.2",
++    "vue": "^2.0.1",
++    "vue-resource": "^1.0.3"
+   }
+ }
+diff --git a/LaravelDiffApp/resources/assets/js/app.js b/LaravelDiffApp/resources/assets/js/app.js
+index 87dd5ad..a8eb8e2 100644
+--- a/LaravelDiffApp/resources/assets/js/app.js
++++ b/LaravelDiffApp/resources/assets/js/app.js
+@@ -16,5 +16,5 @@ require('./bootstrap');
+ Vue.component('example', require('./components/Example.vue'));
+ 
+ const app = new Vue({
+-    el: 'body'
++    el: '#app'
+ });
+diff --git a/LaravelDiffApp/resources/assets/js/bootstrap.js b/LaravelDiffApp/resources/assets/js/bootstrap.js
+index 3f4c5cf..a2f3529 100644
+--- a/LaravelDiffApp/resources/assets/js/bootstrap.js
++++ b/LaravelDiffApp/resources/assets/js/bootstrap.js
+@@ -26,7 +26,7 @@ require('vue-resource');
+  */
+ 
+ Vue.http.interceptors.push((request, next) => {
+-    request.headers['X-CSRF-TOKEN'] = Laravel.csrfToken;
++    request.headers.set('X-CSRF-TOKEN', Laravel.csrfToken);
+ 
+     next();
+ });
+diff --git a/LaravelDiffApp/resources/assets/js/components/Example.vue b/LaravelDiffApp/resources/assets/js/components/Example.vue
+index 067ef66..86a0b70 100644
+--- a/LaravelDiffApp/resources/assets/js/components/Example.vue
++++ b/LaravelDiffApp/resources/assets/js/components/Example.vue
+@@ -16,7 +16,7 @@
+ 
+ <script>
+     export default {
+-        ready() {
++        mounted() {
+             console.log('Component ready.')
+         }
+     }

@@ -1,0 +1,94 @@
+diff --git a/LaravelDiffApp/.env.example b/LaravelDiffApp/.env.example
+index d058c34..09a4d57 100644
+--- a/LaravelDiffApp/.env.example
++++ b/LaravelDiffApp/.env.example
+@@ -32,8 +32,6 @@ MAIL_ENCRYPTION=null
+ 
+ AWS_ACCESS_KEY_ID=
+ AWS_SECRET_ACCESS_KEY=
+-AWS_DEFAULT_REGION=us-east-1
+-AWS_BUCKET=
+ 
+ PUSHER_APP_ID=
+ PUSHER_APP_KEY=
+diff --git a/LaravelDiffApp/app/Providers/AuthServiceProvider.php b/LaravelDiffApp/app/Providers/AuthServiceProvider.php
+index 0acc984..9784b1a 100644
+--- a/LaravelDiffApp/app/Providers/AuthServiceProvider.php
++++ b/LaravelDiffApp/app/Providers/AuthServiceProvider.php
+@@ -13,7 +13,7 @@ class AuthServiceProvider extends ServiceProvider
+      * @var array
+      */
+     protected $policies = [
+-        // 'App\Model' => 'App\Policies\ModelPolicy',
++        'App\Model' => 'App\Policies\ModelPolicy',
+     ];
+ 
+     /**
+diff --git a/LaravelDiffApp/config/cache.php b/LaravelDiffApp/config/cache.php
+index 30f0cae..4976722 100644
+--- a/LaravelDiffApp/config/cache.php
++++ b/LaravelDiffApp/config/cache.php
+@@ -80,7 +80,7 @@ return [
+             'driver' => 'dynamodb',
+             'key' => env('AWS_ACCESS_KEY_ID'),
+             'secret' => env('AWS_SECRET_ACCESS_KEY'),
+-            'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
++            'region' => env('AWS_REGION', 'us-east-1'),
+             'table' => env('DYNAMODB_CACHE_TABLE', 'cache'),
+         ],
+ 
+diff --git a/LaravelDiffApp/config/database.php b/LaravelDiffApp/config/database.php
+index 49ec59a..77c3184 100644
+--- a/LaravelDiffApp/config/database.php
++++ b/LaravelDiffApp/config/database.php
+@@ -54,9 +54,9 @@ return [
+             'prefix_indexes' => true,
+             'strict' => true,
+             'engine' => null,
+-            'options' => extension_loaded('pdo_mysql') ? array_filter([
++            'options' => array_filter([
+                 PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
+-            ]) : [],
++            ]),
+         ],
+ 
+         'pgsql' => [
+diff --git a/LaravelDiffApp/config/mail.php b/LaravelDiffApp/config/mail.php
+index 6f8469f..f400645 100644
+--- a/LaravelDiffApp/config/mail.php
++++ b/LaravelDiffApp/config/mail.php
+@@ -12,7 +12,7 @@ return [
+     | your application here. By default, Laravel is setup for SMTP mail.
+     |
+     | Supported: "smtp", "sendmail", "mailgun", "mandrill", "ses",
+-    |            "sparkpost", "postmark", "log", "array"
++    |            "sparkpost", "log", "array"
+     |
+     */
+ 
+diff --git a/LaravelDiffApp/config/queue.php b/LaravelDiffApp/config/queue.php
+index 07c7d2a..ec520ec 100644
+--- a/LaravelDiffApp/config/queue.php
++++ b/LaravelDiffApp/config/queue.php
+@@ -55,7 +55,7 @@ return [
+             'secret' => env('AWS_SECRET_ACCESS_KEY'),
+             'prefix' => env('SQS_PREFIX', 'https://sqs.us-east-1.amazonaws.com/your-account-id'),
+             'queue' => env('SQS_QUEUE', 'your-queue-name'),
+-            'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
++            'region' => env('AWS_REGION', 'us-east-1'),
+         ],
+ 
+         'redis' => [
+diff --git a/LaravelDiffApp/config/services.php b/LaravelDiffApp/config/services.php
+index f026b2c..e546cbf 100644
+--- a/LaravelDiffApp/config/services.php
++++ b/LaravelDiffApp/config/services.php
+@@ -27,7 +27,7 @@ return [
+     'ses' => [
+         'key' => env('AWS_ACCESS_KEY_ID'),
+         'secret' => env('AWS_SECRET_ACCESS_KEY'),
+-        'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
++        'region' => env('AWS_REGION', 'us-east-1'),
+     ],
+ 
+     'sparkpost' => [

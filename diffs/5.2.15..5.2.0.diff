@@ -1,0 +1,249 @@
+diff --git a/LaravelDiffApp/.env.example b/LaravelDiffApp/.env.example
+index afbeae4..031862b 100644
+--- a/LaravelDiffApp/.env.example
++++ b/LaravelDiffApp/.env.example
+@@ -2,7 +2,7 @@ APP_ENV=local
+ APP_DEBUG=true
+ APP_KEY=SomeRandomString
+ 
+-DB_HOST=127.0.0.1
++DB_HOST=localhost
+ DB_DATABASE=homestead
+ DB_USERNAME=homestead
+ DB_PASSWORD=secret
+@@ -11,7 +11,7 @@ CACHE_DRIVER=file
+ SESSION_DRIVER=file
+ QUEUE_DRIVER=sync
+ 
+-REDIS_HOST=127.0.0.1
++REDIS_HOST=localhost
+ REDIS_PASSWORD=null
+ REDIS_PORT=6379
+ 
+diff --git a/LaravelDiffApp/.gitignore b/LaravelDiffApp/.gitignore
+index 6b3af3f..2ff24d0 100644
+--- a/LaravelDiffApp/.gitignore
++++ b/LaravelDiffApp/.gitignore
+@@ -1,6 +1,5 @@
+ /vendor
+ /node_modules
+-/public/storage
+ Homestead.yaml
+ Homestead.json
+ .env
+diff --git a/LaravelDiffApp/app/Console/Kernel.php b/LaravelDiffApp/app/Console/Kernel.php
+index 71c519d..5e4a31b 100644
+--- a/LaravelDiffApp/app/Console/Kernel.php
++++ b/LaravelDiffApp/app/Console/Kernel.php
+@@ -13,7 +13,7 @@ class Kernel extends ConsoleKernel
+      * @var array
+      */
+     protected $commands = [
+-        // Commands\Inspire::class,
++        Commands\Inspire::class,
+     ];
+ 
+     /**
+@@ -24,7 +24,7 @@ class Kernel extends ConsoleKernel
+      */
+     protected function schedule(Schedule $schedule)
+     {
+-        // $schedule->command('inspire')
+-        //          ->hourly();
++        $schedule->command('inspire')
++                 ->hourly();
+     }
+ }
+diff --git a/LaravelDiffApp/app/Exceptions/Handler.php b/LaravelDiffApp/app/Exceptions/Handler.php
+index 53617ef..7db9e07 100644
+--- a/LaravelDiffApp/app/Exceptions/Handler.php
++++ b/LaravelDiffApp/app/Exceptions/Handler.php
+@@ -3,10 +3,11 @@
+ namespace App\Exceptions;
+ 
+ use Exception;
+-use Illuminate\Validation\ValidationException;
+ use Illuminate\Auth\Access\AuthorizationException;
+ use Illuminate\Database\Eloquent\ModelNotFoundException;
+ use Symfony\Component\HttpKernel\Exception\HttpException;
++use Illuminate\Foundation\Validation\ValidationException;
++use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+ use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
+ 
+ class Handler extends ExceptionHandler
+@@ -33,7 +34,7 @@ class Handler extends ExceptionHandler
+      */
+     public function report(Exception $e)
+     {
+-        parent::report($e);
++        return parent::report($e);
+     }
+ 
+     /**
+diff --git a/LaravelDiffApp/app/Http/Controllers/Auth/AuthController.php b/LaravelDiffApp/app/Http/Controllers/Auth/AuthController.php
+index 2d7b1a9..d96635b 100644
+--- a/LaravelDiffApp/app/Http/Controllers/Auth/AuthController.php
++++ b/LaravelDiffApp/app/Http/Controllers/Auth/AuthController.php
+@@ -28,7 +28,7 @@ class AuthController extends Controller
+      *
+      * @var string
+      */
+-    protected $redirectTo = '/';
++    protected $redirectTo = '/home';
+ 
+     /**
+      * Create a new authentication controller instance.
+diff --git a/LaravelDiffApp/app/Http/Middleware/Authenticate.php b/LaravelDiffApp/app/Http/Middleware/Authenticate.php
+index 67abcae..d670fbf 100644
+--- a/LaravelDiffApp/app/Http/Middleware/Authenticate.php
++++ b/LaravelDiffApp/app/Http/Middleware/Authenticate.php
+@@ -18,7 +18,7 @@ class Authenticate
+     public function handle($request, Closure $next, $guard = null)
+     {
+         if (Auth::guard($guard)->guest()) {
+-            if ($request->ajax() || $request->wantsJson()) {
++            if ($request->ajax()) {
+                 return response('Unauthorized.', 401);
+             } else {
+                 return redirect()->guest('login');
+diff --git a/LaravelDiffApp/config/cache.php b/LaravelDiffApp/config/cache.php
+index b00a998..379135b 100644
+--- a/LaravelDiffApp/config/cache.php
++++ b/LaravelDiffApp/config/cache.php
+@@ -51,9 +51,7 @@ return [
+             'driver'  => 'memcached',
+             'servers' => [
+                 [
+-                    'host' => env('MEMCACHED_HOST', '127.0.0.1'),
+-                    'port' => env('MEMCACHED_PORT', 11211),
+-                    'weight' => 100,
++                    'host' => '127.0.0.1', 'port' => 11211, 'weight' => 100,
+                 ],
+             ],
+         ],
+diff --git a/LaravelDiffApp/config/database.php b/LaravelDiffApp/config/database.php
+index edd6425..66e88a9 100644
+--- a/LaravelDiffApp/config/database.php
++++ b/LaravelDiffApp/config/database.php
+@@ -62,7 +62,6 @@ return [
+             'collation' => 'utf8_unicode_ci',
+             'prefix'    => '',
+             'strict'    => false,
+-            'engine'    => null,
+         ],
+ 
+         'pgsql' => [
+diff --git a/LaravelDiffApp/config/filesystems.php b/LaravelDiffApp/config/filesystems.php
+index 75b5002..3fffcf0 100644
+--- a/LaravelDiffApp/config/filesystems.php
++++ b/LaravelDiffApp/config/filesystems.php
+@@ -45,23 +45,41 @@ return [
+ 
+         'local' => [
+             'driver' => 'local',
+-            'root' => storage_path('app'),
++            'root'   => storage_path('app'),
+         ],
+ 
+-        'public' => [
+-            'driver' => 'local',
+-            'root' => storage_path('app/public'),
+-            'visibility' => 'public',
++        'ftp' => [
++            'driver'   => 'ftp',
++            'host'     => 'ftp.example.com',
++            'username' => 'your-username',
++            'password' => 'your-password',
++
++            // Optional FTP Settings...
++            // 'port'     => 21,
++            // 'root'     => '',
++            // 'passive'  => true,
++            // 'ssl'      => true,
++            // 'timeout'  => 30,
+         ],
+ 
+         's3' => [
+             'driver' => 's3',
+-            'key' => 'your-key',
++            'key'    => 'your-key',
+             'secret' => 'your-secret',
+             'region' => 'your-region',
+             'bucket' => 'your-bucket',
+         ],
+ 
++        'rackspace' => [
++            'driver'    => 'rackspace',
++            'username'  => 'your-username',
++            'key'       => 'your-key',
++            'container' => 'your-container',
++            'endpoint'  => 'https://identity.api.rackspacecloud.com/v2.0/',
++            'region'    => 'IAD',
++            'url_type'  => 'publicURL',
++        ],
++
+     ],
+ 
+ ];
+diff --git a/LaravelDiffApp/public/.htaccess b/LaravelDiffApp/public/.htaccess
+index 903f639..8eb2dd0 100644
+--- a/LaravelDiffApp/public/.htaccess
++++ b/LaravelDiffApp/public/.htaccess
+@@ -13,8 +13,4 @@
+     RewriteCond %{REQUEST_FILENAME} !-d
+     RewriteCond %{REQUEST_FILENAME} !-f
+     RewriteRule ^ index.php [L]
+-
+-    # Handle Authorization Header
+-    RewriteCond %{HTTP:Authorization} .
+-    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+ </IfModule>
+diff --git a/LaravelDiffApp/public/web.config b/LaravelDiffApp/public/web.config
+index 624c176..2da2a95 100644
+--- a/LaravelDiffApp/public/web.config
++++ b/LaravelDiffApp/public/web.config
+@@ -15,7 +15,7 @@
+             <add input="{REQUEST_FILENAME}" matchType="IsDirectory" ignoreCase="false" negate="true" />
+             <add input="{REQUEST_FILENAME}" matchType="IsFile" ignoreCase="false" negate="true" />
+           </conditions>
+-          <action type="Rewrite" url="index.php" />
++	  <action type="Rewrite" url="index.php" />
+         </rule>
+       </rules>
+     </rewrite>
+diff --git a/LaravelDiffApp/readme.md b/LaravelDiffApp/readme.md
+index 8f1a949..f67a6cf 100644
+--- a/LaravelDiffApp/readme.md
++++ b/LaravelDiffApp/readme.md
+@@ -1,4 +1,4 @@
+-# Laravel PHP Framework
++## Laravel PHP Framework
+ 
+ [![Build Status](https://travis-ci.org/laravel/framework.svg)](https://travis-ci.org/laravel/framework)
+ [![Total Downloads](https://poser.pugx.org/laravel/framework/d/total.svg)](https://packagist.org/packages/laravel/framework)
+@@ -22,6 +22,6 @@ Thank you for considering contributing to the Laravel framework! The contributio
+ 
+ If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell at taylor@laravel.com. All security vulnerabilities will be promptly addressed.
+ 
+-## License
++### License
+ 
+ The Laravel framework is open-sourced software licensed under the [MIT license](http://opensource.org/licenses/MIT)
+diff --git a/LaravelDiffApp/storage/app/.gitignore b/LaravelDiffApp/storage/app/.gitignore
+index 8f4803c..c96a04f 100644
+--- a/LaravelDiffApp/storage/app/.gitignore
++++ b/LaravelDiffApp/storage/app/.gitignore
+@@ -1,3 +1,2 @@
+ *
+-!public/
+-!.gitignore
++!.gitignore
+\ No newline at end of file
+diff --git a/LaravelDiffApp/storage/app/public/.gitignore b/LaravelDiffApp/storage/app/public/.gitignore
+deleted file mode 100644
+index d6b7ef3..0000000
+--- a/LaravelDiffApp/storage/app/public/.gitignore
++++ /dev/null
+@@ -1,2 +0,0 @@
+-*
+-!.gitignore

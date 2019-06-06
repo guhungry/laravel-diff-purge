@@ -1,0 +1,152 @@
+diff --git a/LaravelDiffApp/app/config/app.php b/LaravelDiffApp/app/config/app.php
+index 27665c6..10ae94b 100644
+--- a/LaravelDiffApp/app/config/app.php
++++ b/LaravelDiffApp/app/config/app.php
+@@ -150,44 +150,44 @@ return array(
+ 
+ 	'aliases' => array(
+ 
+-		'App'             => 'Illuminate\Support\Facades\App',
+-		'Artisan'         => 'Illuminate\Support\Facades\Artisan',
+-		'Auth'            => 'Illuminate\Support\Facades\Auth',
+-		'Blade'           => 'Illuminate\Support\Facades\Blade',
+-		'Cache'           => 'Illuminate\Support\Facades\Cache',
+-		'ClassLoader'     => 'Illuminate\Support\ClassLoader',
+-		'Config'          => 'Illuminate\Support\Facades\Config',
+-		'Controller'      => 'Illuminate\Routing\Controller',
+-		'Cookie'          => 'Illuminate\Support\Facades\Cookie',
+-		'Crypt'           => 'Illuminate\Support\Facades\Crypt',
+-		'DB'              => 'Illuminate\Support\Facades\DB',
+-		'Eloquent'        => 'Illuminate\Database\Eloquent\Model',
+-		'Event'           => 'Illuminate\Support\Facades\Event',
+-		'File'            => 'Illuminate\Support\Facades\File',
+-		'Form'            => 'Illuminate\Support\Facades\Form',
+-		'Hash'            => 'Illuminate\Support\Facades\Hash',
+-		'HTML'            => 'Illuminate\Support\Facades\HTML',
+-		'Input'           => 'Illuminate\Support\Facades\Input',
+-		'Lang'            => 'Illuminate\Support\Facades\Lang',
+-		'Log'             => 'Illuminate\Support\Facades\Log',
+-		'Mail'            => 'Illuminate\Support\Facades\Mail',
+-		'Paginator'       => 'Illuminate\Support\Facades\Paginator',
+-		'Password'        => 'Illuminate\Support\Facades\Password',
+-		'Queue'           => 'Illuminate\Support\Facades\Queue',
+-		'Redirect'        => 'Illuminate\Support\Facades\Redirect',
+-		'Redis'           => 'Illuminate\Support\Facades\Redis',
+-		'Request'         => 'Illuminate\Support\Facades\Request',
+-		'Response'        => 'Illuminate\Support\Facades\Response',
+-		'Route'           => 'Illuminate\Support\Facades\Route',
+-		'Schema'          => 'Illuminate\Support\Facades\Schema',
+-		'Seeder'          => 'Illuminate\Database\Seeder',
+-		'Session'         => 'Illuminate\Support\Facades\Session',
++		'App'               => 'Illuminate\Support\Facades\App',
++		'Artisan'           => 'Illuminate\Support\Facades\Artisan',
++		'Auth'              => 'Illuminate\Support\Facades\Auth',
++		'Blade'             => 'Illuminate\Support\Facades\Blade',
++		'Cache'             => 'Illuminate\Support\Facades\Cache',
++		'ClassLoader'       => 'Illuminate\Support\ClassLoader',
++		'Config'            => 'Illuminate\Support\Facades\Config',
++		'Controller'        => 'Illuminate\Routing\Controller',
++		'Cookie'            => 'Illuminate\Support\Facades\Cookie',
++		'Crypt'             => 'Illuminate\Support\Facades\Crypt',
++		'DB'                => 'Illuminate\Support\Facades\DB',
++		'Eloquent'          => 'Illuminate\Database\Eloquent\Model',
++		'Event'             => 'Illuminate\Support\Facades\Event',
++		'File'              => 'Illuminate\Support\Facades\File',
++		'Form'              => 'Illuminate\Support\Facades\Form',
++		'Hash'              => 'Illuminate\Support\Facades\Hash',
++		'HTML'              => 'Illuminate\Support\Facades\HTML',
++		'Input'             => 'Illuminate\Support\Facades\Input',
++		'Lang'              => 'Illuminate\Support\Facades\Lang',
++		'Log'               => 'Illuminate\Support\Facades\Log',
++		'Mail'              => 'Illuminate\Support\Facades\Mail',
++		'Paginator'         => 'Illuminate\Support\Facades\Paginator',
++		'Password'          => 'Illuminate\Support\Facades\Password',
++		'Queue'             => 'Illuminate\Support\Facades\Queue',
++		'Redirect'          => 'Illuminate\Support\Facades\Redirect',
++		'Redis'             => 'Illuminate\Support\Facades\Redis',
++		'Request'           => 'Illuminate\Support\Facades\Request',
++		'Response'          => 'Illuminate\Support\Facades\Response',
++		'Route'             => 'Illuminate\Support\Facades\Route',
++		'Schema'            => 'Illuminate\Support\Facades\Schema',
++		'Seeder'            => 'Illuminate\Database\Seeder',
++		'Session'           => 'Illuminate\Support\Facades\Session',
+ 		'SoftDeletingTrait' => 'Illuminate\Database\Eloquent\SoftDeletingTrait',
+-		'SSH'             => 'Illuminate\Support\Facades\SSH',
+-		'Str'             => 'Illuminate\Support\Str',
+-		'URL'             => 'Illuminate\Support\Facades\URL',
+-		'Validator'       => 'Illuminate\Support\Facades\Validator',
+-		'View'            => 'Illuminate\Support\Facades\View',
++		'SSH'               => 'Illuminate\Support\Facades\SSH',
++		'Str'               => 'Illuminate\Support\Str',
++		'URL'               => 'Illuminate\Support\Facades\URL',
++		'Validator'         => 'Illuminate\Support\Facades\Validator',
++		'View'              => 'Illuminate\Support\Facades\View',
+ 
+ 	),
+ 
+diff --git a/LaravelDiffApp/app/database/.gitignore b/LaravelDiffApp/app/database/.gitignore
+new file mode 100644
+index 0000000..9b1dffd
+--- /dev/null
++++ b/LaravelDiffApp/app/database/.gitignore
+@@ -0,0 +1 @@
++*.sqlite
+diff --git a/LaravelDiffApp/app/database/production.sqlite b/LaravelDiffApp/app/database/production.sqlite
+deleted file mode 100644
+index e69de29..0000000
+diff --git a/LaravelDiffApp/app/filters.php b/LaravelDiffApp/app/filters.php
+index fd0b4bc..97a9468 100644
+--- a/LaravelDiffApp/app/filters.php
++++ b/LaravelDiffApp/app/filters.php
+@@ -83,7 +83,7 @@ Route::filter('guest', function()
+ 
+ Route::filter('csrf', function()
+ {
+-	if (Session::token() != Input::get('_token'))
++	if (Session::token() !== Input::get('_token'))
+ 	{
+ 		throw new Illuminate\Session\TokenMismatchException;
+ 	}
+diff --git a/LaravelDiffApp/app/lang/en/reminders.php b/LaravelDiffApp/app/lang/en/reminders.php
+index e42148e..e2e24e5 100644
+--- a/LaravelDiffApp/app/lang/en/reminders.php
++++ b/LaravelDiffApp/app/lang/en/reminders.php
+@@ -21,4 +21,6 @@ return array(
+ 
+ 	"sent" => "Password reminder sent!",
+ 
++	"reset" => "Password has been reset!",
++
+ );
+diff --git a/LaravelDiffApp/app/lang/en/validation.php b/LaravelDiffApp/app/lang/en/validation.php
+index b03b926..648516e 100644
+--- a/LaravelDiffApp/app/lang/en/validation.php
++++ b/LaravelDiffApp/app/lang/en/validation.php
+@@ -27,6 +27,7 @@ return array(
+ 		"string"  => "The :attribute must be between :min and :max characters.",
+ 		"array"   => "The :attribute must have between :min and :max items.",
+ 	),
++	"boolean"              => "The :attribute field must be true or false.",
+ 	"confirmed"            => "The :attribute confirmation does not match.",
+ 	"date"                 => "The :attribute is not a valid date.",
+ 	"date_format"          => "The :attribute does not match the format :format.",
+@@ -70,6 +71,7 @@ return array(
+ 	),
+ 	"unique"               => "The :attribute has already been taken.",
+ 	"url"                  => "The :attribute format is invalid.",
++	"timezone"             => "The :attribute must be a valid zone.",
+ 
+ 	/*
+ 	|--------------------------------------------------------------------------
+diff --git a/LaravelDiffApp/composer.json b/LaravelDiffApp/composer.json
+index 4f00769..e53e401 100644
+--- a/LaravelDiffApp/composer.json
++++ b/LaravelDiffApp/composer.json
+@@ -3,6 +3,7 @@
+ 	"description": "The Laravel Framework.",
+ 	"keywords": ["framework", "laravel"],
+ 	"license": "MIT",
++	"type": "project",
+ 	"require": {
+ 		"laravel/framework": "4.2.*"
+ 	},

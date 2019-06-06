@@ -1,0 +1,206 @@
+diff --git a/LaravelDiffApp/.env.example b/LaravelDiffApp/.env.example
+index 55b5223..668c06f 100644
+--- a/LaravelDiffApp/.env.example
++++ b/LaravelDiffApp/.env.example
+@@ -1,3 +1,4 @@
++APP_NAME=Laravel
+ APP_ENV=local
+ APP_KEY=
+ APP_DEBUG=true
+diff --git a/LaravelDiffApp/.gitattributes b/LaravelDiffApp/.gitattributes
+index a8763f8..967315d 100644
+--- a/LaravelDiffApp/.gitattributes
++++ b/LaravelDiffApp/.gitattributes
+@@ -1,3 +1,5 @@
+ * text=auto
+ *.css linguist-vendored
+ *.scss linguist-vendored
++*.js linguist-vendored
++CHANGELOG.md export-ignore
+diff --git a/LaravelDiffApp/.gitignore b/LaravelDiffApp/.gitignore
+index c561e9b..2a41229 100644
+--- a/LaravelDiffApp/.gitignore
++++ b/LaravelDiffApp/.gitignore
+@@ -1,9 +1,11 @@
+ /node_modules
+-/public/storage
+ /public/hot
++/public/storage
+ /storage/*.key
+ /vendor
+ /.idea
++/.vagrant
+ Homestead.json
+ Homestead.yaml
++npm-debug.log
+ .env
+diff --git a/LaravelDiffApp/app/Http/Controllers/Auth/LoginController.php b/LaravelDiffApp/app/Http/Controllers/Auth/LoginController.php
+index 7594953..b2ea669 100644
+--- a/LaravelDiffApp/app/Http/Controllers/Auth/LoginController.php
++++ b/LaravelDiffApp/app/Http/Controllers/Auth/LoginController.php
+@@ -34,6 +34,6 @@ class LoginController extends Controller
+      */
+     public function __construct()
+     {
+-        $this->middleware('guest', ['except' => 'logout']);
++        $this->middleware('guest')->except('logout');
+     }
+ }
+diff --git a/LaravelDiffApp/app/Http/Controllers/Auth/RegisterController.php b/LaravelDiffApp/app/Http/Controllers/Auth/RegisterController.php
+index c5c83e5..ed8d1b7 100644
+--- a/LaravelDiffApp/app/Http/Controllers/Auth/RegisterController.php
++++ b/LaravelDiffApp/app/Http/Controllers/Auth/RegisterController.php
+@@ -48,9 +48,9 @@ class RegisterController extends Controller
+     protected function validator(array $data)
+     {
+         return Validator::make($data, [
+-            'name' => 'required|max:255',
+-            'email' => 'required|email|max:255|unique:users',
+-            'password' => 'required|min:6|confirmed',
++            'name' => 'required|string|max:255',
++            'email' => 'required|string|email|max:255|unique:users',
++            'password' => 'required|string|min:6|confirmed',
+         ]);
+     }
+ 
+diff --git a/LaravelDiffApp/app/Providers/EventServiceProvider.php b/LaravelDiffApp/app/Providers/EventServiceProvider.php
+index a182657..fca6152 100644
+--- a/LaravelDiffApp/app/Providers/EventServiceProvider.php
++++ b/LaravelDiffApp/app/Providers/EventServiceProvider.php
+@@ -13,7 +13,7 @@ class EventServiceProvider extends ServiceProvider
+      * @var array
+      */
+     protected $listen = [
+-        'App\Events\SomeEvent' => [
++        'App\Events\Event' => [
+             'App\Listeners\EventListener',
+         ],
+     ];
+diff --git a/LaravelDiffApp/composer.json b/LaravelDiffApp/composer.json
+index 2b1259d..eb080e9 100644
+--- a/LaravelDiffApp/composer.json
++++ b/LaravelDiffApp/composer.json
+@@ -45,6 +45,7 @@
+     },
+     "config": {
+         "preferred-install": "dist",
+-        "sort-packages": true
++        "sort-packages": true,
++        "optimize-autoloader": true
+     }
+ }
+diff --git a/LaravelDiffApp/config/app.php b/LaravelDiffApp/config/app.php
+index 3036ac7..135e977 100644
+--- a/LaravelDiffApp/config/app.php
++++ b/LaravelDiffApp/config/app.php
+@@ -12,7 +12,7 @@ return [
+     | any other location as required by the application or its packages.
+     */
+ 
+-    'name' => 'Laravel',
++    'name' => env('APP_NAME', 'Laravel'),
+ 
+     /*
+     |--------------------------------------------------------------------------
+diff --git a/LaravelDiffApp/package.json b/LaravelDiffApp/package.json
+index c896e51..83294b6 100644
+--- a/LaravelDiffApp/package.json
++++ b/LaravelDiffApp/package.json
+@@ -1,10 +1,12 @@
+ {
+   "private": true,
+   "scripts": {
+-    "dev": "cross-env NODE_ENV=development node_modules/webpack/bin/webpack.js --progress --hide-modules --config=node_modules/laravel-mix/setup/webpack.config.js",
++    "dev": "npm run development",
++    "development": "cross-env NODE_ENV=development node_modules/webpack/bin/webpack.js --progress --hide-modules --config=node_modules/laravel-mix/setup/webpack.config.js",
+     "watch": "cross-env NODE_ENV=development node_modules/webpack/bin/webpack.js --watch --progress --hide-modules --config=node_modules/laravel-mix/setup/webpack.config.js",
+-    "watch-poll": "cross-env NODE_ENV=development node_modules/webpack/bin/webpack.js --watch --watch-poll --progress --hide-modules --config=node_modules/laravel-mix/setup/webpack.config.js",
++    "watch-poll": "npm run watch -- --watch-poll",
+     "hot": "cross-env NODE_ENV=development node_modules/webpack-dev-server/bin/webpack-dev-server.js --inline --hot --config=node_modules/laravel-mix/setup/webpack.config.js",
++    "prod": "npm run production",
+     "production": "cross-env NODE_ENV=production node_modules/webpack/bin/webpack.js --progress --hide-modules --config=node_modules/laravel-mix/setup/webpack.config.js"
+   },
+   "devDependencies": {
+@@ -12,7 +14,7 @@
+     "bootstrap-sass": "^3.3.7",
+     "cross-env": "^3.2.3",
+     "jquery": "^3.1.1",
+-    "laravel-mix": "^0.8.3",
++    "laravel-mix": "0.*",
+     "lodash": "^4.17.4",
+     "vue": "^2.1.10"
+   }
+diff --git a/LaravelDiffApp/readme.md b/LaravelDiffApp/readme.md
+index 70f23e0..336ce59 100644
+--- a/LaravelDiffApp/readme.md
++++ b/LaravelDiffApp/readme.md
+@@ -27,6 +27,17 @@ Laravel has the most extensive and thorough documentation and video tutorial lib
+ 
+ If you're not in the mood to read, [Laracasts](https://laracasts.com) contains over 900 video tutorials on a range of topics including Laravel, modern PHP, unit testing, JavaScript, and more. Boost the skill level of yourself and your entire team by digging into our comprehensive video library.
+ 
++## Laravel Sponsors
++
++We would like to extend our thanks to the following sponsors for helping fund on-going Laravel development. If you are interested in becoming a sponsor, please visit the Laravel [Patreon page](http://patreon.com/taylorotwell):
++
++- **[Vehikl](http://vehikl.com)**
++- **[Tighten Co.](https://tighten.co)**
++- **[British Software Development](https://www.britishsoftware.co)**
++- **[Styde](https://styde.net)**
++- **[Codecourse](https://www.codecourse.com)**
++- [Fragrantica](https://www.fragrantica.com)
++
+ ## Contributing
+ 
+ Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](http://laravel.com/docs/contributions).
+diff --git a/LaravelDiffApp/resources/assets/js/app.js b/LaravelDiffApp/resources/assets/js/app.js
+index 9f08625..c1620c1 100644
+--- a/LaravelDiffApp/resources/assets/js/app.js
++++ b/LaravelDiffApp/resources/assets/js/app.js
+@@ -7,6 +7,8 @@
+ 
+ require('./bootstrap');
+ 
++window.Vue = require('vue');
++
+ /**
+  * Next, we will create a fresh Vue application instance and attach it to
+  * the page. Then, you may begin adding components to this application
+diff --git a/LaravelDiffApp/resources/assets/js/bootstrap.js b/LaravelDiffApp/resources/assets/js/bootstrap.js
+index 36ec688..b5d2602 100644
+--- a/LaravelDiffApp/resources/assets/js/bootstrap.js
++++ b/LaravelDiffApp/resources/assets/js/bootstrap.js
+@@ -7,17 +7,11 @@ window._ = require('lodash');
+  * code may be modified to fit the specific needs of your application.
+  */
+ 
+-window.$ = window.jQuery = require('jquery');
++try {
++    window.$ = window.jQuery = require('jquery');
+ 
+-require('bootstrap-sass');
+-
+-/**
+- * Vue is a modern JavaScript library for building interactive web interfaces
+- * using reactive data binding and reusable components. Vue's API is clean
+- * and simple, leaving you to focus on building your next great project.
+- */
+-
+-window.Vue = require('vue');
++    require('bootstrap-sass');
++} catch (e) {}
+ 
+ /**
+  * We'll load the axios HTTP library which allows us to easily issue requests
+@@ -27,10 +21,8 @@ window.Vue = require('vue');
+ 
+ window.axios = require('axios');
+ 
+-window.axios.defaults.headers.common = {
+-    'X-CSRF-TOKEN': window.Laravel.csrfToken,
+-    'X-Requested-With': 'XMLHttpRequest'
+-};
++window.axios.defaults.headers.common['X-CSRF-TOKEN'] = window.Laravel.csrfToken;
++window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
+ 
+ /**
+  * Echo exposes an expressive API for subscribing to channels and listening

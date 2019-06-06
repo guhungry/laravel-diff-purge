@@ -1,0 +1,457 @@
+diff --git a/LaravelDiffApp/.gitignore b/LaravelDiffApp/.gitignore
+index 59e8f45..169c5ee 100644
+--- a/LaravelDiffApp/.gitignore
++++ b/LaravelDiffApp/.gitignore
+@@ -3,9 +3,13 @@
+ /public/storage
+ /storage/*.key
+ /vendor
+-.env
+-.phpunit.result.cache
++/.idea
++/.vscode
++/nbproject
++/.vagrant
+ Homestead.json
+ Homestead.yaml
+ npm-debug.log
+ yarn-error.log
++.env
++.phpunit.result.cache
+diff --git a/LaravelDiffApp/app/Http/Kernel.php b/LaravelDiffApp/app/Http/Kernel.php
+index a3d8c48..9491962 100644
+--- a/LaravelDiffApp/app/Http/Kernel.php
++++ b/LaravelDiffApp/app/Http/Kernel.php
+@@ -65,7 +65,7 @@ class Kernel extends HttpKernel
+     /**
+      * The priority-sorted list of middleware.
+      *
+-     * This forces non-global middleware to always be in the given order.
++     * This forces the listed middleware to always be in the given order.
+      *
+      * @var array
+      */
+diff --git a/LaravelDiffApp/app/Providers/AppServiceProvider.php b/LaravelDiffApp/app/Providers/AppServiceProvider.php
+index ee8ca5b..35471f6 100644
+--- a/LaravelDiffApp/app/Providers/AppServiceProvider.php
++++ b/LaravelDiffApp/app/Providers/AppServiceProvider.php
+@@ -7,21 +7,21 @@ use Illuminate\Support\ServiceProvider;
+ class AppServiceProvider extends ServiceProvider
+ {
+     /**
+-     * Register any application services.
++     * Bootstrap any application services.
+      *
+      * @return void
+      */
+-    public function register()
++    public function boot()
+     {
+         //
+     }
+ 
+     /**
+-     * Bootstrap any application services.
++     * Register any application services.
+      *
+      * @return void
+      */
+-    public function boot()
++    public function register()
+     {
+         //
+     }
+diff --git a/LaravelDiffApp/app/User.php b/LaravelDiffApp/app/User.php
+index faa03c3..fbc0e58 100644
+--- a/LaravelDiffApp/app/User.php
++++ b/LaravelDiffApp/app/User.php
+@@ -27,13 +27,4 @@ class User extends Authenticatable
+     protected $hidden = [
+         'password', 'remember_token',
+     ];
+-
+-    /**
+-     * The attributes that should be cast to native types.
+-     *
+-     * @var array
+-     */
+-    protected $casts = [
+-        'email_verified_at' => 'datetime',
+-    ];
+ }
+diff --git a/LaravelDiffApp/bootstrap/app.php b/LaravelDiffApp/bootstrap/app.php
+index 037e17d..c65a860 100644
+--- a/LaravelDiffApp/bootstrap/app.php
++++ b/LaravelDiffApp/bootstrap/app.php
+@@ -12,7 +12,7 @@
+ */
+ 
+ $app = new Illuminate\Foundation\Application(
+-    $_ENV['APP_BASE_PATH'] ?? dirname(__DIR__)
++    dirname(__DIR__)
+ );
+ 
+ /*
+diff --git a/LaravelDiffApp/composer.json b/LaravelDiffApp/composer.json
+index b473a9b..f587e08 100644
+--- a/LaravelDiffApp/composer.json
++++ b/LaravelDiffApp/composer.json
+@@ -1,12 +1,9 @@
+ {
+     "name": "laravel/laravel",
+-    "type": "project",
+     "description": "The Laravel Framework.",
+-    "keywords": [
+-        "framework",
+-        "laravel"
+-    ],
++    "keywords": ["framework", "laravel"],
+     "license": "MIT",
++    "type": "project",
+     "require": {
+         "php": "^7.1.3",
+         "fideloper/proxy": "^4.0",
+@@ -21,42 +18,43 @@
+         "nunomaduro/collision": "^2.0",
+         "phpunit/phpunit": "^7.0"
+     },
+-    "config": {
+-        "optimize-autoloader": true,
+-        "preferred-install": "dist",
+-        "sort-packages": true
+-    },
+-    "extra": {
+-        "laravel": {
+-            "dont-discover": []
+-        }
+-    },
+     "autoload": {
+-        "psr-4": {
+-            "App\\": "app/"
+-        },
+         "classmap": [
+             "database/seeds",
+             "database/factories"
+-        ]
++        ],
++        "psr-4": {
++            "App\\": "app/"
++        }
+     },
+     "autoload-dev": {
+         "psr-4": {
+             "Tests\\": "tests/"
+         }
+     },
+-    "minimum-stability": "dev",
+-    "prefer-stable": true,
++    "extra": {
++        "laravel": {
++            "dont-discover": [
++            ]
++        }
++    },
+     "scripts": {
+-        "post-autoload-dump": [
+-            "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
+-            "@php artisan package:discover --ansi"
+-        ],
+         "post-root-package-install": [
+             "@php -r \"file_exists('.env') || copy('.env.example', '.env');\""
+         ],
+         "post-create-project-cmd": [
+             "@php artisan key:generate --ansi"
++        ],
++        "post-autoload-dump": [
++            "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
++            "@php artisan package:discover --ansi"
+         ]
+-    }
++    },
++    "config": {
++        "preferred-install": "dist",
++        "sort-packages": true,
++        "optimize-autoloader": true
++    },
++    "minimum-stability": "dev",
++    "prefer-stable": true
+ }
+diff --git a/LaravelDiffApp/config/app.php b/LaravelDiffApp/config/app.php
+index 57ee5b7..01081dc 100644
+--- a/LaravelDiffApp/config/app.php
++++ b/LaravelDiffApp/config/app.php
+@@ -54,8 +54,6 @@ return [
+ 
+     'url' => env('APP_URL', 'http://localhost'),
+ 
+-    'asset_url' => env('ASSET_URL', null),
+-
+     /*
+     |--------------------------------------------------------------------------
+     | Application Timezone
+diff --git a/LaravelDiffApp/config/cache.php b/LaravelDiffApp/config/cache.php
+index 4f0b3c4..0c30969 100644
+--- a/LaravelDiffApp/config/cache.php
++++ b/LaravelDiffApp/config/cache.php
+@@ -59,7 +59,7 @@ return [
+                 env('MEMCACHED_PASSWORD'),
+             ],
+             'options' => [
+-                // Memcached::OPT_CONNECT_TIMEOUT => 2000,
++                // Memcached::OPT_CONNECT_TIMEOUT  => 2000,
+             ],
+             'servers' => [
+                 [
+diff --git a/LaravelDiffApp/config/logging.php b/LaravelDiffApp/config/logging.php
+index d09cd7d..506f2f3 100644
+--- a/LaravelDiffApp/config/logging.php
++++ b/LaravelDiffApp/config/logging.php
+@@ -37,7 +37,6 @@ return [
+         'stack' => [
+             'driver' => 'stack',
+             'channels' => ['daily'],
+-            'ignore_exceptions' => false,
+         ],
+ 
+         'single' => [
+@@ -62,7 +61,7 @@ return [
+         ],
+ 
+         'papertrail' => [
+-            'driver' => 'monolog',
++            'driver'  => 'monolog',
+             'level' => 'debug',
+             'handler' => SyslogUdpHandler::class,
+             'handler_with' => [
+@@ -74,7 +73,6 @@ return [
+         'stderr' => [
+             'driver' => 'monolog',
+             'handler' => StreamHandler::class,
+-            'formatter' => env('LOG_STDERR_FORMATTER'),
+             'with' => [
+                 'stream' => 'php://stderr',
+             ],
+diff --git a/LaravelDiffApp/config/mail.php b/LaravelDiffApp/config/mail.php
+index f400645..bb92224 100644
+--- a/LaravelDiffApp/config/mail.php
++++ b/LaravelDiffApp/config/mail.php
+@@ -120,17 +120,4 @@ return [
+         ],
+     ],
+ 
+-    /*
+-    |--------------------------------------------------------------------------
+-    | Log Channel
+-    |--------------------------------------------------------------------------
+-    |
+-    | If you are using the "log" driver, you may specify the logging channel
+-    | if you prefer to keep mail messages separate from other log entries
+-    | for simpler reading. Otherwise, the default channel will be used.
+-    |
+-    */
+-
+-    'log_channel' => env('MAIL_LOG_CHANNEL'),
+-
+ ];
+diff --git a/LaravelDiffApp/config/view.php b/LaravelDiffApp/config/view.php
+index 22b8a18..2acfd9c 100644
+--- a/LaravelDiffApp/config/view.php
++++ b/LaravelDiffApp/config/view.php
+@@ -28,9 +28,6 @@ return [
+     |
+     */
+ 
+-    'compiled' => env(
+-        'VIEW_COMPILED_PATH',
+-        realpath(storage_path('framework/views'))
+-    ),
++    'compiled' => realpath(storage_path('framework/views')),
+ 
+ ];
+diff --git a/LaravelDiffApp/database/factories/UserFactory.php b/LaravelDiffApp/database/factories/UserFactory.php
+index 1b62a33..ec15e58 100644
+--- a/LaravelDiffApp/database/factories/UserFactory.php
++++ b/LaravelDiffApp/database/factories/UserFactory.php
+@@ -1,6 +1,5 @@
+ <?php
+ 
+-use Illuminate\Support\Str;
+ use Faker\Generator as Faker;
+ 
+ /*
+@@ -20,6 +19,6 @@ $factory->define(App\User::class, function (Faker $faker) {
+         'email' => $faker->unique()->safeEmail,
+         'email_verified_at' => now(),
+         'password' => '$2y$10$TKh8H1.PfQx37YgCzwiKb.KjNyWgaHb9cbcoQgdIVFlYg7B77UdFm', // secret
+-        'remember_token' => Str::random(10),
++        'remember_token' => str_random(10),
+     ];
+ });
+diff --git a/LaravelDiffApp/package.json b/LaravelDiffApp/package.json
+index 76bd398..cb2f688 100644
+--- a/LaravelDiffApp/package.json
++++ b/LaravelDiffApp/package.json
+@@ -14,12 +14,9 @@
+         "bootstrap": "^4.0.0",
+         "cross-env": "^5.1",
+         "jquery": "^3.2",
+-        "laravel-mix": "^4.0.7",
++        "laravel-mix": "^2.0",
+         "lodash": "^4.17.5",
+         "popper.js": "^1.12",
+-        "resolve-url-loader": "^2.3.1",
+-        "sass": "^1.15.2",
+-        "sass-loader": "^7.1.0",
+         "vue": "^2.5.17"
+     }
+ }
+diff --git a/LaravelDiffApp/public/web.config b/LaravelDiffApp/public/web.config
+index d3711d7..624c176 100644
+--- a/LaravelDiffApp/public/web.config
++++ b/LaravelDiffApp/public/web.config
+@@ -1,8 +1,3 @@
+-<!--
+-    Rewrites requires Microsoft URL Rewrite Module for IIS
+-    Download: https://www.microsoft.com/en-us/download/details.aspx?id=47337
+-    Debug Help: https://docs.microsoft.com/en-us/iis/extensions/url-rewrite-module/using-failed-request-tracing-to-trace-rewrite-rules
+--->
+ <configuration>
+   <system.webServer>
+     <rewrite>
+diff --git a/LaravelDiffApp/readme.md b/LaravelDiffApp/readme.md
+index 2cb6913..98a3e64 100644
+--- a/LaravelDiffApp/readme.md
++++ b/LaravelDiffApp/readme.md
+@@ -9,7 +9,7 @@
+ 
+ ## About Laravel
+ 
+-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
++Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel attempts to take the pain out of development by easing common tasks used in the majority of web projects, such as:
+ 
+ - [Simple, fast routing engine](https://laravel.com/docs/routing).
+ - [Powerful dependency injection container](https://laravel.com/docs/container).
+@@ -19,27 +19,25 @@ Laravel is a web application framework with expressive, elegant syntax. We belie
+ - [Robust background job processing](https://laravel.com/docs/queues).
+ - [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+ 
+-Laravel is accessible, powerful, and provides tools required for large, robust applications.
++Laravel is accessible, yet powerful, providing tools needed for large, robust applications.
+ 
+ ## Learning Laravel
+ 
+-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
++Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of any modern web application framework, making it a breeze to get started learning the framework.
+ 
+-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains over 1100 video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost you and your team's skills by digging into our comprehensive video library.
++If you're not in the mood to read, [Laracasts](https://laracasts.com) contains over 1100 video tutorials on a range of topics including Laravel, modern PHP, unit testing, JavaScript, and more. Boost the skill level of yourself and your entire team by digging into our comprehensive video library.
+ 
+ ## Laravel Sponsors
+ 
+-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the Laravel [Patreon page](https://patreon.com/taylorotwell).
++We would like to extend our thanks to the following sponsors for helping fund on-going Laravel development. If you are interested in becoming a sponsor, please visit the Laravel [Patreon page](https://patreon.com/taylorotwell):
+ 
+ - **[Vehikl](https://vehikl.com/)**
+ - **[Tighten Co.](https://tighten.co)**
+ - **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
+ - **[64 Robots](https://64robots.com)**
+ - **[Cubet Techno Labs](https://cubettech.com)**
+-- **[Cyber-Duck](https://cyber-duck.co.uk)**
+ - **[British Software Development](https://www.britishsoftware.co)**
+ - **[Webdock, Fast VPS Hosting](https://www.webdock.io/en)**
+-- **[DevSquad](https://devsquad.com)**
+ - [UserInsights](https://userinsights.com)
+ - [Fragrantica](https://www.fragrantica.com)
+ - [SOFTonSOFA](https://softonsofa.com/)
+@@ -56,7 +54,6 @@ We would like to extend our thanks to the following sponsors for funding Laravel
+ - [Steadfast Collective](https://steadfastcollective.com/)
+ - [We Are The Robots Inc.](https://watr.mx/)
+ - [Understand.io](https://www.understand.io/)
+-- [Abdel Elrafa](https://abdelelrafa.com)
+ 
+ ## Contributing
+ 
+@@ -68,4 +65,4 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
+ 
+ ## License
+ 
+-The Laravel framework is open-source software licensed under the [MIT license](https://opensource.org/licenses/MIT).
++The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+diff --git a/LaravelDiffApp/resources/js/app.js b/LaravelDiffApp/resources/js/app.js
+index 32d79b4..543dd59 100644
+--- a/LaravelDiffApp/resources/js/app.js
++++ b/LaravelDiffApp/resources/js/app.js
+@@ -17,10 +17,13 @@ window.Vue = require('vue');
+  * Eg. ./components/ExampleComponent.vue -> <example-component></example-component>
+  */
+ 
++Vue.component('example-component', require('./components/ExampleComponent.vue'));
++
+ // const files = require.context('./', true, /\.vue$/i)
+-// files.keys().map(key => Vue.component(key.split('/').pop().split('.')[0], files(key).default))
+ 
+-Vue.component('example-component', require('./components/ExampleComponent.vue').default);
++// files.keys().map(key => {
++//     return Vue.component(_.last(key.split('/')).split('.')[0], files(key))
++// })
+ 
+ /**
+  * Next, we will create a fresh Vue application instance and attach it to
+diff --git a/LaravelDiffApp/resources/js/components/ExampleComponent.vue b/LaravelDiffApp/resources/js/components/ExampleComponent.vue
+index 3fb9f9a..2805329 100644
+--- a/LaravelDiffApp/resources/js/components/ExampleComponent.vue
++++ b/LaravelDiffApp/resources/js/components/ExampleComponent.vue
+@@ -2,7 +2,7 @@
+     <div class="container">
+         <div class="row justify-content-center">
+             <div class="col-md-8">
+-                <div class="card">
++                <div class="card card-default">
+                     <div class="card-header">Example Component</div>
+ 
+                     <div class="card-body">
+diff --git a/LaravelDiffApp/resources/lang/en/validation.php b/LaravelDiffApp/resources/lang/en/validation.php
+index 8ab929c..35e5e88 100644
+--- a/LaravelDiffApp/resources/lang/en/validation.php
++++ b/LaravelDiffApp/resources/lang/en/validation.php
+@@ -32,7 +32,6 @@ return [
+     'boolean' => 'The :attribute field must be true or false.',
+     'confirmed' => 'The :attribute confirmation does not match.',
+     'date' => 'The :attribute is not a valid date.',
+-    'date_equals' => 'The :attribute must be a date equal to :date.',
+     'date_format' => 'The :attribute does not match the format :format.',
+     'different' => 'The :attribute and :other must be different.',
+     'digits' => 'The :attribute must be :digits digits.',
+@@ -108,7 +107,6 @@ return [
+         'string' => 'The :attribute must be :size characters.',
+         'array' => 'The :attribute must contain :size items.',
+     ],
+-    'starts_with' => 'The :attribute must start with one of the following: :values',
+     'string' => 'The :attribute must be a string.',
+     'timezone' => 'The :attribute must be a valid zone.',
+     'unique' => 'The :attribute has already been taken.',
+diff --git a/LaravelDiffApp/resources/views/welcome.blade.php b/LaravelDiffApp/resources/views/welcome.blade.php
+index 044b874..26ca674 100644
+--- a/LaravelDiffApp/resources/views/welcome.blade.php
++++ b/LaravelDiffApp/resources/views/welcome.blade.php
+@@ -7,7 +7,7 @@
+         <title>Laravel</title>
+ 
+         <!-- Fonts -->
+-        <link href="https://fonts.googleapis.com/css?family=Nunito:200,600" rel="stylesheet">
++        <link href="https://fonts.googleapis.com/css?family=Nunito:200,600" rel="stylesheet" type="text/css">
+ 
+         <!-- Styles -->
+         <style>
+@@ -85,10 +85,9 @@
+                 </div>
+ 
+                 <div class="links">
+-                    <a href="https://laravel.com/docs">Docs</a>
++                    <a href="https://laravel.com/docs">Documentation</a>
+                     <a href="https://laracasts.com">Laracasts</a>
+                     <a href="https://laravel-news.com">News</a>
+-                    <a href="https://blog.laravel.com">Blog</a>
+                     <a href="https://nova.laravel.com">Nova</a>
+                     <a href="https://forge.laravel.com">Forge</a>
+                     <a href="https://github.com/laravel/laravel">GitHub</a>

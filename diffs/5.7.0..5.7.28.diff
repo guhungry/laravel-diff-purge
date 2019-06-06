@@ -1,0 +1,985 @@
+diff --git a/LaravelDiffApp/.gitignore b/LaravelDiffApp/.gitignore
+index 7c34e0f..59e8f45 100644
+--- a/LaravelDiffApp/.gitignore
++++ b/LaravelDiffApp/.gitignore
+@@ -3,12 +3,9 @@
+ /public/storage
+ /storage/*.key
+ /vendor
+-/.idea
+-/.vscode
+-/.vagrant
++.env
++.phpunit.result.cache
+ Homestead.json
+ Homestead.yaml
+ npm-debug.log
+ yarn-error.log
+-.env
+-.phpunit.result.cache
+diff --git a/LaravelDiffApp/app/Http/Controllers/Auth/RegisterController.php b/LaravelDiffApp/app/Http/Controllers/Auth/RegisterController.php
+index e749c07..0e8d66a 100644
+--- a/LaravelDiffApp/app/Http/Controllers/Auth/RegisterController.php
++++ b/LaravelDiffApp/app/Http/Controllers/Auth/RegisterController.php
+@@ -49,9 +49,9 @@ class RegisterController extends Controller
+     protected function validator(array $data)
+     {
+         return Validator::make($data, [
+-            'name' => 'required|string|max:255',
+-            'email' => 'required|string|email|max:255|unique:users',
+-            'password' => 'required|string|min:6|confirmed',
++            'name' => ['required', 'string', 'max:255'],
++            'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
++            'password' => ['required', 'string', 'min:6', 'confirmed'],
+         ]);
+     }
+ 
+diff --git a/LaravelDiffApp/app/Http/Controllers/Auth/VerificationController.php b/LaravelDiffApp/app/Http/Controllers/Auth/VerificationController.php
+index b5d8ba3..23a43a8 100644
+--- a/LaravelDiffApp/app/Http/Controllers/Auth/VerificationController.php
++++ b/LaravelDiffApp/app/Http/Controllers/Auth/VerificationController.php
+@@ -2,8 +2,7 @@
+ 
+ namespace App\Http\Controllers\Auth;
+ 
+-use Illuminate\Http\Request;
+-use Illuminate\Routing\Controller;
++use App\Http\Controllers\Controller;
+ use Illuminate\Foundation\Auth\VerifiesEmails;
+ 
+ class VerificationController extends Controller
+@@ -15,7 +14,7 @@ class VerificationController extends Controller
+     |
+     | This controller is responsible for handling email verification for any
+     | user that recently registered with the application. Emails may also
+-    | be resent if the user did not receive the original email message.
++    | be re-sent if the user didn't receive the original email message.
+     |
+     */
+ 
+diff --git a/LaravelDiffApp/app/Http/Kernel.php b/LaravelDiffApp/app/Http/Kernel.php
+index 0e5dff8..a3d8c48 100644
+--- a/LaravelDiffApp/app/Http/Kernel.php
++++ b/LaravelDiffApp/app/Http/Kernel.php
+@@ -61,4 +61,20 @@ class Kernel extends HttpKernel
+         'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
+         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
+     ];
++
++    /**
++     * The priority-sorted list of middleware.
++     *
++     * This forces non-global middleware to always be in the given order.
++     *
++     * @var array
++     */
++    protected $middlewarePriority = [
++        \Illuminate\Session\Middleware\StartSession::class,
++        \Illuminate\View\Middleware\ShareErrorsFromSession::class,
++        \App\Http\Middleware\Authenticate::class,
++        \Illuminate\Session\Middleware\AuthenticateSession::class,
++        \Illuminate\Routing\Middleware\SubstituteBindings::class,
++        \Illuminate\Auth\Middleware\Authorize::class,
++    ];
+ }
+diff --git a/LaravelDiffApp/app/Http/Middleware/Authenticate.php b/LaravelDiffApp/app/Http/Middleware/Authenticate.php
+index 41ad4a9..a4be5c5 100644
+--- a/LaravelDiffApp/app/Http/Middleware/Authenticate.php
++++ b/LaravelDiffApp/app/Http/Middleware/Authenticate.php
+@@ -14,6 +14,8 @@ class Authenticate extends Middleware
+      */
+     protected function redirectTo($request)
+     {
+-        return route('login');
++        if (! $request->expectsJson()) {
++            return route('login');
++        }
+     }
+ }
+diff --git a/LaravelDiffApp/app/Providers/AppServiceProvider.php b/LaravelDiffApp/app/Providers/AppServiceProvider.php
+index 35471f6..ee8ca5b 100644
+--- a/LaravelDiffApp/app/Providers/AppServiceProvider.php
++++ b/LaravelDiffApp/app/Providers/AppServiceProvider.php
+@@ -7,21 +7,21 @@ use Illuminate\Support\ServiceProvider;
+ class AppServiceProvider extends ServiceProvider
+ {
+     /**
+-     * Bootstrap any application services.
++     * Register any application services.
+      *
+      * @return void
+      */
+-    public function boot()
++    public function register()
+     {
+         //
+     }
+ 
+     /**
+-     * Register any application services.
++     * Bootstrap any application services.
+      *
+      * @return void
+      */
+-    public function register()
++    public function boot()
+     {
+         //
+     }
+diff --git a/LaravelDiffApp/app/User.php b/LaravelDiffApp/app/User.php
+index fbc0e58..faa03c3 100644
+--- a/LaravelDiffApp/app/User.php
++++ b/LaravelDiffApp/app/User.php
+@@ -27,4 +27,13 @@ class User extends Authenticatable
+     protected $hidden = [
+         'password', 'remember_token',
+     ];
++
++    /**
++     * The attributes that should be cast to native types.
++     *
++     * @var array
++     */
++    protected $casts = [
++        'email_verified_at' => 'datetime',
++    ];
+ }
+diff --git a/LaravelDiffApp/bootstrap/app.php b/LaravelDiffApp/bootstrap/app.php
+index f2801ad..037e17d 100644
+--- a/LaravelDiffApp/bootstrap/app.php
++++ b/LaravelDiffApp/bootstrap/app.php
+@@ -12,7 +12,7 @@
+ */
+ 
+ $app = new Illuminate\Foundation\Application(
+-    realpath(__DIR__.'/../')
++    $_ENV['APP_BASE_PATH'] ?? dirname(__DIR__)
+ );
+ 
+ /*
+diff --git a/LaravelDiffApp/composer.json b/LaravelDiffApp/composer.json
+index 3cb9426..b473a9b 100644
+--- a/LaravelDiffApp/composer.json
++++ b/LaravelDiffApp/composer.json
+@@ -1,9 +1,12 @@
+ {
+     "name": "laravel/laravel",
++    "type": "project",
+     "description": "The Laravel Framework.",
+-    "keywords": ["framework", "laravel"],
++    "keywords": [
++        "framework",
++        "laravel"
++    ],
+     "license": "MIT",
+-    "type": "project",
+     "require": {
+         "php": "^7.1.3",
+         "fideloper/proxy": "^4.0",
+@@ -18,43 +21,42 @@
+         "nunomaduro/collision": "^2.0",
+         "phpunit/phpunit": "^7.0"
+     },
++    "config": {
++        "optimize-autoloader": true,
++        "preferred-install": "dist",
++        "sort-packages": true
++    },
++    "extra": {
++        "laravel": {
++            "dont-discover": []
++        }
++    },
+     "autoload": {
++        "psr-4": {
++            "App\\": "app/"
++        },
+         "classmap": [
+             "database/seeds",
+             "database/factories"
+-        ],
+-        "psr-4": {
+-            "App\\": "app/"
+-        }
++        ]
+     },
+     "autoload-dev": {
+         "psr-4": {
+             "Tests\\": "tests/"
+         }
+     },
+-    "extra": {
+-        "laravel": {
+-            "dont-discover": [
+-            ]
+-        }
+-    },
++    "minimum-stability": "dev",
++    "prefer-stable": true,
+     "scripts": {
++        "post-autoload-dump": [
++            "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
++            "@php artisan package:discover --ansi"
++        ],
+         "post-root-package-install": [
+             "@php -r \"file_exists('.env') || copy('.env.example', '.env');\""
+         ],
+         "post-create-project-cmd": [
+-            "@php artisan key:generate"
+-        ],
+-        "post-autoload-dump": [
+-            "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
+-            "@php artisan package:discover"
++            "@php artisan key:generate --ansi"
+         ]
+-    },
+-    "config": {
+-        "preferred-install": "dist",
+-        "sort-packages": true,
+-        "optimize-autoloader": true
+-    },
+-    "minimum-stability": "dev",
+-    "prefer-stable": true
++    }
+ }
+diff --git a/LaravelDiffApp/config/app.php b/LaravelDiffApp/config/app.php
+index 056512b..57ee5b7 100644
+--- a/LaravelDiffApp/config/app.php
++++ b/LaravelDiffApp/config/app.php
+@@ -54,6 +54,8 @@ return [
+ 
+     'url' => env('APP_URL', 'http://localhost'),
+ 
++    'asset_url' => env('ASSET_URL', null),
++
+     /*
+     |--------------------------------------------------------------------------
+     | Application Timezone
+@@ -93,6 +95,19 @@ return [
+ 
+     'fallback_locale' => 'en',
+ 
++    /*
++    |--------------------------------------------------------------------------
++    | Faker Locale
++    |--------------------------------------------------------------------------
++    |
++    | This locale will be used by the Faker PHP library when generating fake
++    | data for your database seeds. For example, this will be used to get
++    | localized telephone numbers, street address information and more.
++    |
++    */
++
++    'faker_locale' => 'en_US',
++
+     /*
+     |--------------------------------------------------------------------------
+     | Encryption Key
+diff --git a/LaravelDiffApp/config/cache.php b/LaravelDiffApp/config/cache.php
+index 6c4629d..4f0b3c4 100644
+--- a/LaravelDiffApp/config/cache.php
++++ b/LaravelDiffApp/config/cache.php
+@@ -1,5 +1,7 @@
+ <?php
+ 
++use Illuminate\Support\Str;
++
+ return [
+ 
+     /*
+@@ -57,7 +59,7 @@ return [
+                 env('MEMCACHED_PASSWORD'),
+             ],
+             'options' => [
+-                // Memcached::OPT_CONNECT_TIMEOUT  => 2000,
++                // Memcached::OPT_CONNECT_TIMEOUT => 2000,
+             ],
+             'servers' => [
+                 [
+@@ -86,9 +88,6 @@ return [
+     |
+     */
+ 
+-    'prefix' => env(
+-        'CACHE_PREFIX',
+-        str_slug(env('APP_NAME', 'laravel'), '_').'_cache'
+-    ),
++    'prefix' => env('CACHE_PREFIX', Str::slug(env('APP_NAME', 'laravel'), '_').'_cache'),
+ 
+ ];
+diff --git a/LaravelDiffApp/config/database.php b/LaravelDiffApp/config/database.php
+index c60c885..22347a4 100644
+--- a/LaravelDiffApp/config/database.php
++++ b/LaravelDiffApp/config/database.php
+@@ -37,6 +37,7 @@ return [
+             'driver' => 'sqlite',
+             'database' => env('DB_DATABASE', database_path('database.sqlite')),
+             'prefix' => '',
++            'foreign_key_constraints' => env('DB_FOREIGN_KEYS', true),
+         ],
+ 
+         'mysql' => [
+@@ -50,6 +51,7 @@ return [
+             'charset' => 'utf8mb4',
+             'collation' => 'utf8mb4_unicode_ci',
+             'prefix' => '',
++            'prefix_indexes' => true,
+             'strict' => true,
+             'engine' => null,
+         ],
+@@ -63,6 +65,7 @@ return [
+             'password' => env('DB_PASSWORD', ''),
+             'charset' => 'utf8',
+             'prefix' => '',
++            'prefix_indexes' => true,
+             'schema' => 'public',
+             'sslmode' => 'prefer',
+         ],
+@@ -76,6 +79,7 @@ return [
+             'password' => env('DB_PASSWORD', ''),
+             'charset' => 'utf8',
+             'prefix' => '',
++            'prefix_indexes' => true,
+         ],
+ 
+     ],
+@@ -99,7 +103,7 @@ return [
+     |--------------------------------------------------------------------------
+     |
+     | Redis is an open source, fast, and advanced key-value store that also
+-    | provides a richer set of commands than a typical key-value systems
++    | provides a richer body of commands than a typical key-value system
+     | such as APC or Memcached. Laravel makes it easy to dig right in.
+     |
+     */
+diff --git a/LaravelDiffApp/config/logging.php b/LaravelDiffApp/config/logging.php
+index 400bc7f..d09cd7d 100644
+--- a/LaravelDiffApp/config/logging.php
++++ b/LaravelDiffApp/config/logging.php
+@@ -1,6 +1,7 @@
+ <?php
+ 
+ use Monolog\Handler\StreamHandler;
++use Monolog\Handler\SyslogUdpHandler;
+ 
+ return [
+ 
+@@ -35,7 +36,8 @@ return [
+     'channels' => [
+         'stack' => [
+             'driver' => 'stack',
+-            'channels' => ['single'],
++            'channels' => ['daily'],
++            'ignore_exceptions' => false,
+         ],
+ 
+         'single' => [
+@@ -48,7 +50,7 @@ return [
+             'driver' => 'daily',
+             'path' => storage_path('logs/laravel.log'),
+             'level' => 'debug',
+-            'days' => 7,
++            'days' => 14,
+         ],
+ 
+         'slack' => [
+@@ -59,9 +61,20 @@ return [
+             'level' => 'critical',
+         ],
+ 
++        'papertrail' => [
++            'driver' => 'monolog',
++            'level' => 'debug',
++            'handler' => SyslogUdpHandler::class,
++            'handler_with' => [
++                'host' => env('PAPERTRAIL_URL'),
++                'port' => env('PAPERTRAIL_PORT'),
++            ],
++        ],
++
+         'stderr' => [
+             'driver' => 'monolog',
+             'handler' => StreamHandler::class,
++            'formatter' => env('LOG_STDERR_FORMATTER'),
+             'with' => [
+                 'stream' => 'php://stderr',
+             ],
+diff --git a/LaravelDiffApp/config/mail.php b/LaravelDiffApp/config/mail.php
+index bb92224..f400645 100644
+--- a/LaravelDiffApp/config/mail.php
++++ b/LaravelDiffApp/config/mail.php
+@@ -120,4 +120,17 @@ return [
+         ],
+     ],
+ 
++    /*
++    |--------------------------------------------------------------------------
++    | Log Channel
++    |--------------------------------------------------------------------------
++    |
++    | If you are using the "log" driver, you may specify the logging channel
++    | if you prefer to keep mail messages separate from other log entries
++    | for simpler reading. Otherwise, the default channel will be used.
++    |
++    */
++
++    'log_channel' => env('MAIL_LOG_CHANNEL'),
++
+ ];
+diff --git a/LaravelDiffApp/config/queue.php b/LaravelDiffApp/config/queue.php
+index 38326ef..c1430b4 100644
+--- a/LaravelDiffApp/config/queue.php
++++ b/LaravelDiffApp/config/queue.php
+@@ -60,7 +60,7 @@ return [
+         'redis' => [
+             'driver' => 'redis',
+             'connection' => 'default',
+-            'queue' => 'default',
++            'queue' => env('REDIS_QUEUE', 'default'),
+             'retry_after' => 90,
+             'block_for' => null,
+         ],
+diff --git a/LaravelDiffApp/config/services.php b/LaravelDiffApp/config/services.php
+index aa1f7f8..bb4d2ec 100644
+--- a/LaravelDiffApp/config/services.php
++++ b/LaravelDiffApp/config/services.php
+@@ -17,6 +17,7 @@ return [
+     'mailgun' => [
+         'domain' => env('MAILGUN_DOMAIN'),
+         'secret' => env('MAILGUN_SECRET'),
++        'endpoint' => env('MAILGUN_ENDPOINT', 'api.mailgun.net'),
+     ],
+ 
+     'ses' => [
+@@ -33,6 +34,10 @@ return [
+         'model' => App\User::class,
+         'key' => env('STRIPE_KEY'),
+         'secret' => env('STRIPE_SECRET'),
++        'webhook' => [
++            'secret' => env('STRIPE_WEBHOOK_SECRET'),
++            'tolerance' => env('STRIPE_WEBHOOK_TOLERANCE', 300),
++        ],
+     ],
+ 
+ ];
+diff --git a/LaravelDiffApp/config/session.php b/LaravelDiffApp/config/session.php
+index 38829b7..fae302a 100644
+--- a/LaravelDiffApp/config/session.php
++++ b/LaravelDiffApp/config/session.php
+@@ -1,5 +1,7 @@
+ <?php
+ 
++use Illuminate\Support\Str;
++
+ return [
+ 
+     /*
+@@ -124,7 +126,7 @@ return [
+ 
+     'cookie' => env(
+         'SESSION_COOKIE',
+-        str_slug(env('APP_NAME', 'laravel'), '_').'_session'
++        Str::slug(env('APP_NAME', 'laravel'), '_').'_session'
+     ),
+ 
+     /*
+diff --git a/LaravelDiffApp/config/view.php b/LaravelDiffApp/config/view.php
+index 2acfd9c..22b8a18 100644
+--- a/LaravelDiffApp/config/view.php
++++ b/LaravelDiffApp/config/view.php
+@@ -28,6 +28,9 @@ return [
+     |
+     */
+ 
+-    'compiled' => realpath(storage_path('framework/views')),
++    'compiled' => env(
++        'VIEW_COMPILED_PATH',
++        realpath(storage_path('framework/views'))
++    ),
+ 
+ ];
+diff --git a/LaravelDiffApp/database/factories/UserFactory.php b/LaravelDiffApp/database/factories/UserFactory.php
+index facf233..1b62a33 100644
+--- a/LaravelDiffApp/database/factories/UserFactory.php
++++ b/LaravelDiffApp/database/factories/UserFactory.php
+@@ -1,5 +1,6 @@
+ <?php
+ 
++use Illuminate\Support\Str;
+ use Faker\Generator as Faker;
+ 
+ /*
+@@ -17,7 +18,8 @@ $factory->define(App\User::class, function (Faker $faker) {
+     return [
+         'name' => $faker->name,
+         'email' => $faker->unique()->safeEmail,
++        'email_verified_at' => now(),
+         'password' => '$2y$10$TKh8H1.PfQx37YgCzwiKb.KjNyWgaHb9cbcoQgdIVFlYg7B77UdFm', // secret
+-        'remember_token' => str_random(10),
++        'remember_token' => Str::random(10),
+     ];
+ });
+diff --git a/LaravelDiffApp/package.json b/LaravelDiffApp/package.json
+index d5f92f9..76bd398 100644
+--- a/LaravelDiffApp/package.json
++++ b/LaravelDiffApp/package.json
+@@ -14,9 +14,12 @@
+         "bootstrap": "^4.0.0",
+         "cross-env": "^5.1",
+         "jquery": "^3.2",
+-        "laravel-mix": "^2.0",
++        "laravel-mix": "^4.0.7",
+         "lodash": "^4.17.5",
+         "popper.js": "^1.12",
+-        "vue": "^2.5.7"
++        "resolve-url-loader": "^2.3.1",
++        "sass": "^1.15.2",
++        "sass-loader": "^7.1.0",
++        "vue": "^2.5.17"
+     }
+ }
+diff --git a/LaravelDiffApp/phpunit.xml b/LaravelDiffApp/phpunit.xml
+index f564cfb..9566b67 100644
+--- a/LaravelDiffApp/phpunit.xml
++++ b/LaravelDiffApp/phpunit.xml
+@@ -26,8 +26,8 @@
+         <env name="APP_ENV" value="testing"/>
+         <env name="BCRYPT_ROUNDS" value="4"/>
+         <env name="CACHE_DRIVER" value="array"/>
+-        <env name="SESSION_DRIVER" value="array"/>
+-        <env name="QUEUE_DRIVER" value="sync"/>
+         <env name="MAIL_DRIVER" value="array"/>
++        <env name="QUEUE_CONNECTION" value="sync"/>
++        <env name="SESSION_DRIVER" value="array"/>
+     </php>
+ </phpunit>
+diff --git a/LaravelDiffApp/public/web.config b/LaravelDiffApp/public/web.config
+index 624c176..d3711d7 100644
+--- a/LaravelDiffApp/public/web.config
++++ b/LaravelDiffApp/public/web.config
+@@ -1,3 +1,8 @@
++<!--
++    Rewrites requires Microsoft URL Rewrite Module for IIS
++    Download: https://www.microsoft.com/en-us/download/details.aspx?id=47337
++    Debug Help: https://docs.microsoft.com/en-us/iis/extensions/url-rewrite-module/using-failed-request-tracing-to-trace-rewrite-rules
++-->
+ <configuration>
+   <system.webServer>
+     <rewrite>
+diff --git a/LaravelDiffApp/readme.md b/LaravelDiffApp/readme.md
+index b0affd5..2cb6913 100644
+--- a/LaravelDiffApp/readme.md
++++ b/LaravelDiffApp/readme.md
+@@ -9,7 +9,7 @@
+ 
+ ## About Laravel
+ 
+-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel attempts to take the pain out of development by easing common tasks used in the majority of web projects, such as:
++Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+ 
+ - [Simple, fast routing engine](https://laravel.com/docs/routing).
+ - [Powerful dependency injection container](https://laravel.com/docs/container).
+@@ -19,24 +19,27 @@ Laravel is a web application framework with expressive, elegant syntax. We belie
+ - [Robust background job processing](https://laravel.com/docs/queues).
+ - [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+ 
+-Laravel is accessible, yet powerful, providing tools needed for large, robust applications.
++Laravel is accessible, powerful, and provides tools required for large, robust applications.
+ 
+ ## Learning Laravel
+ 
+-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of any modern web application framework, making it a breeze to get started learning the framework.
++Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+ 
+-If you're not in the mood to read, [Laracasts](https://laracasts.com) contains over 1100 video tutorials on a range of topics including Laravel, modern PHP, unit testing, JavaScript, and more. Boost the skill level of yourself and your entire team by digging into our comprehensive video library.
++If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains over 1100 video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost you and your team's skills by digging into our comprehensive video library.
+ 
+ ## Laravel Sponsors
+ 
+-We would like to extend our thanks to the following sponsors for helping fund on-going Laravel development. If you are interested in becoming a sponsor, please visit the Laravel [Patreon page](https://patreon.com/taylorotwell):
++We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the Laravel [Patreon page](https://patreon.com/taylorotwell).
+ 
+ - **[Vehikl](https://vehikl.com/)**
+ - **[Tighten Co.](https://tighten.co)**
+ - **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
++- **[64 Robots](https://64robots.com)**
+ - **[Cubet Techno Labs](https://cubettech.com)**
++- **[Cyber-Duck](https://cyber-duck.co.uk)**
+ - **[British Software Development](https://www.britishsoftware.co)**
+ - **[Webdock, Fast VPS Hosting](https://www.webdock.io/en)**
++- **[DevSquad](https://devsquad.com)**
+ - [UserInsights](https://userinsights.com)
+ - [Fragrantica](https://www.fragrantica.com)
+ - [SOFTonSOFA](https://softonsofa.com/)
+@@ -51,6 +54,9 @@ We would like to extend our thanks to the following sponsors for helping fund on
+ - [iMi digital](https://www.imi-digital.de/)
+ - [Earthlink](https://www.earthlink.ro/)
+ - [Steadfast Collective](https://steadfastcollective.com/)
++- [We Are The Robots Inc.](https://watr.mx/)
++- [Understand.io](https://www.understand.io/)
++- [Abdel Elrafa](https://abdelelrafa.com)
+ 
+ ## Contributing
+ 
+@@ -62,4 +68,4 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
+ 
+ ## License
+ 
+-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
++The Laravel framework is open-source software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+diff --git a/LaravelDiffApp/resources/js/app.js b/LaravelDiffApp/resources/js/app.js
+index 98eca79..32d79b4 100644
+--- a/LaravelDiffApp/resources/js/app.js
++++ b/LaravelDiffApp/resources/js/app.js
+@@ -9,14 +9,25 @@ require('./bootstrap');
+ 
+ window.Vue = require('vue');
+ 
++/**
++ * The following block of code may be used to automatically register your
++ * Vue components. It will recursively scan this directory for the Vue
++ * components and automatically register them with their "basename".
++ *
++ * Eg. ./components/ExampleComponent.vue -> <example-component></example-component>
++ */
++
++// const files = require.context('./', true, /\.vue$/i)
++// files.keys().map(key => Vue.component(key.split('/').pop().split('.')[0], files(key).default))
++
++Vue.component('example-component', require('./components/ExampleComponent.vue').default);
++
+ /**
+  * Next, we will create a fresh Vue application instance and attach it to
+  * the page. Then, you may begin adding components to this application
+  * or customize the JavaScript scaffolding to fit your unique needs.
+  */
+ 
+-Vue.component('example-component', require('./components/ExampleComponent.vue'));
+-
+ const app = new Vue({
+     el: '#app'
+ });
+diff --git a/LaravelDiffApp/resources/js/bootstrap.js b/LaravelDiffApp/resources/js/bootstrap.js
+index fb0f1ed..c1f8ac3 100644
+--- a/LaravelDiffApp/resources/js/bootstrap.js
++++ b/LaravelDiffApp/resources/js/bootstrap.js
+@@ -1,6 +1,5 @@
+ 
+ window._ = require('lodash');
+-window.Popper = require('popper.js').default;
+ 
+ /**
+  * We'll load jQuery and the Bootstrap jQuery plugin which provides support
+@@ -9,6 +8,7 @@ window.Popper = require('popper.js').default;
+  */
+ 
+ try {
++    window.Popper = require('popper.js').default;
+     window.$ = window.jQuery = require('jquery');
+ 
+     require('bootstrap');
+diff --git a/LaravelDiffApp/resources/js/components/ExampleComponent.vue b/LaravelDiffApp/resources/js/components/ExampleComponent.vue
+index 2805329..3fb9f9a 100644
+--- a/LaravelDiffApp/resources/js/components/ExampleComponent.vue
++++ b/LaravelDiffApp/resources/js/components/ExampleComponent.vue
+@@ -2,7 +2,7 @@
+     <div class="container">
+         <div class="row justify-content-center">
+             <div class="col-md-8">
+-                <div class="card card-default">
++                <div class="card">
+                     <div class="card-header">Example Component</div>
+ 
+                     <div class="card-body">
+diff --git a/LaravelDiffApp/resources/lang/en/pagination.php b/LaravelDiffApp/resources/lang/en/pagination.php
+index 2b9b38e..d481411 100644
+--- a/LaravelDiffApp/resources/lang/en/pagination.php
++++ b/LaravelDiffApp/resources/lang/en/pagination.php
+@@ -13,7 +13,7 @@ return [
+     |
+     */
+ 
+-    'previous' => '« Previous',
+-    'next' => 'Next »',
++    'previous' => '&laquo; Previous',
++    'next' => 'Next &raquo;',
+ 
+ ];
+diff --git a/LaravelDiffApp/resources/lang/en/validation.php b/LaravelDiffApp/resources/lang/en/validation.php
+index b163c42..8ab929c 100644
+--- a/LaravelDiffApp/resources/lang/en/validation.php
++++ b/LaravelDiffApp/resources/lang/en/validation.php
+@@ -13,105 +13,108 @@ return [
+     |
+     */
+ 
+-    'accepted'             => 'The :attribute must be accepted.',
+-    'active_url'           => 'The :attribute is not a valid URL.',
+-    'after'                => 'The :attribute must be a date after :date.',
+-    'after_or_equal'       => 'The :attribute must be a date after or equal to :date.',
+-    'alpha'                => 'The :attribute may only contain letters.',
+-    'alpha_dash'           => 'The :attribute may only contain letters, numbers, dashes and underscores.',
+-    'alpha_num'            => 'The :attribute may only contain letters and numbers.',
+-    'array'                => 'The :attribute must be an array.',
+-    'before'               => 'The :attribute must be a date before :date.',
+-    'before_or_equal'      => 'The :attribute must be a date before or equal to :date.',
+-    'between'              => [
++    'accepted' => 'The :attribute must be accepted.',
++    'active_url' => 'The :attribute is not a valid URL.',
++    'after' => 'The :attribute must be a date after :date.',
++    'after_or_equal' => 'The :attribute must be a date after or equal to :date.',
++    'alpha' => 'The :attribute may only contain letters.',
++    'alpha_dash' => 'The :attribute may only contain letters, numbers, dashes and underscores.',
++    'alpha_num' => 'The :attribute may only contain letters and numbers.',
++    'array' => 'The :attribute must be an array.',
++    'before' => 'The :attribute must be a date before :date.',
++    'before_or_equal' => 'The :attribute must be a date before or equal to :date.',
++    'between' => [
+         'numeric' => 'The :attribute must be between :min and :max.',
+-        'file'    => 'The :attribute must be between :min and :max kilobytes.',
+-        'string'  => 'The :attribute must be between :min and :max characters.',
+-        'array'   => 'The :attribute must have between :min and :max items.',
++        'file' => 'The :attribute must be between :min and :max kilobytes.',
++        'string' => 'The :attribute must be between :min and :max characters.',
++        'array' => 'The :attribute must have between :min and :max items.',
+     ],
+-    'boolean'              => 'The :attribute field must be true or false.',
+-    'confirmed'            => 'The :attribute confirmation does not match.',
+-    'date'                 => 'The :attribute is not a valid date.',
+-    'date_format'          => 'The :attribute does not match the format :format.',
+-    'different'            => 'The :attribute and :other must be different.',
+-    'digits'               => 'The :attribute must be :digits digits.',
+-    'digits_between'       => 'The :attribute must be between :min and :max digits.',
+-    'dimensions'           => 'The :attribute has invalid image dimensions.',
+-    'distinct'             => 'The :attribute field has a duplicate value.',
+-    'email'                => 'The :attribute must be a valid email address.',
+-    'exists'               => 'The selected :attribute is invalid.',
+-    'file'                 => 'The :attribute must be a file.',
+-    'filled'               => 'The :attribute field must have a value.',
+-    'gt'                   => [
++    'boolean' => 'The :attribute field must be true or false.',
++    'confirmed' => 'The :attribute confirmation does not match.',
++    'date' => 'The :attribute is not a valid date.',
++    'date_equals' => 'The :attribute must be a date equal to :date.',
++    'date_format' => 'The :attribute does not match the format :format.',
++    'different' => 'The :attribute and :other must be different.',
++    'digits' => 'The :attribute must be :digits digits.',
++    'digits_between' => 'The :attribute must be between :min and :max digits.',
++    'dimensions' => 'The :attribute has invalid image dimensions.',
++    'distinct' => 'The :attribute field has a duplicate value.',
++    'email' => 'The :attribute must be a valid email address.',
++    'exists' => 'The selected :attribute is invalid.',
++    'file' => 'The :attribute must be a file.',
++    'filled' => 'The :attribute field must have a value.',
++    'gt' => [
+         'numeric' => 'The :attribute must be greater than :value.',
+-        'file'    => 'The :attribute must be greater than :value kilobytes.',
+-        'string'  => 'The :attribute must be greater than :value characters.',
+-        'array'   => 'The :attribute must have more than :value items.',
++        'file' => 'The :attribute must be greater than :value kilobytes.',
++        'string' => 'The :attribute must be greater than :value characters.',
++        'array' => 'The :attribute must have more than :value items.',
+     ],
+-    'gte'                  => [
++    'gte' => [
+         'numeric' => 'The :attribute must be greater than or equal :value.',
+-        'file'    => 'The :attribute must be greater than or equal :value kilobytes.',
+-        'string'  => 'The :attribute must be greater than or equal :value characters.',
+-        'array'   => 'The :attribute must have :value items or more.',
++        'file' => 'The :attribute must be greater than or equal :value kilobytes.',
++        'string' => 'The :attribute must be greater than or equal :value characters.',
++        'array' => 'The :attribute must have :value items or more.',
+     ],
+-    'image'                => 'The :attribute must be an image.',
+-    'in'                   => 'The selected :attribute is invalid.',
+-    'in_array'             => 'The :attribute field does not exist in :other.',
+-    'integer'              => 'The :attribute must be an integer.',
+-    'ip'                   => 'The :attribute must be a valid IP address.',
+-    'ipv4'                 => 'The :attribute must be a valid IPv4 address.',
+-    'ipv6'                 => 'The :attribute must be a valid IPv6 address.',
+-    'json'                 => 'The :attribute must be a valid JSON string.',
+-    'lt'                   => [
++    'image' => 'The :attribute must be an image.',
++    'in' => 'The selected :attribute is invalid.',
++    'in_array' => 'The :attribute field does not exist in :other.',
++    'integer' => 'The :attribute must be an integer.',
++    'ip' => 'The :attribute must be a valid IP address.',
++    'ipv4' => 'The :attribute must be a valid IPv4 address.',
++    'ipv6' => 'The :attribute must be a valid IPv6 address.',
++    'json' => 'The :attribute must be a valid JSON string.',
++    'lt' => [
+         'numeric' => 'The :attribute must be less than :value.',
+-        'file'    => 'The :attribute must be less than :value kilobytes.',
+-        'string'  => 'The :attribute must be less than :value characters.',
+-        'array'   => 'The :attribute must have less than :value items.',
++        'file' => 'The :attribute must be less than :value kilobytes.',
++        'string' => 'The :attribute must be less than :value characters.',
++        'array' => 'The :attribute must have less than :value items.',
+     ],
+-    'lte'                  => [
++    'lte' => [
+         'numeric' => 'The :attribute must be less than or equal :value.',
+-        'file'    => 'The :attribute must be less than or equal :value kilobytes.',
+-        'string'  => 'The :attribute must be less than or equal :value characters.',
+-        'array'   => 'The :attribute must not have more than :value items.',
++        'file' => 'The :attribute must be less than or equal :value kilobytes.',
++        'string' => 'The :attribute must be less than or equal :value characters.',
++        'array' => 'The :attribute must not have more than :value items.',
+     ],
+-    'max'                  => [
++    'max' => [
+         'numeric' => 'The :attribute may not be greater than :max.',
+-        'file'    => 'The :attribute may not be greater than :max kilobytes.',
+-        'string'  => 'The :attribute may not be greater than :max characters.',
+-        'array'   => 'The :attribute may not have more than :max items.',
++        'file' => 'The :attribute may not be greater than :max kilobytes.',
++        'string' => 'The :attribute may not be greater than :max characters.',
++        'array' => 'The :attribute may not have more than :max items.',
+     ],
+-    'mimes'                => 'The :attribute must be a file of type: :values.',
+-    'mimetypes'            => 'The :attribute must be a file of type: :values.',
+-    'min'                  => [
++    'mimes' => 'The :attribute must be a file of type: :values.',
++    'mimetypes' => 'The :attribute must be a file of type: :values.',
++    'min' => [
+         'numeric' => 'The :attribute must be at least :min.',
+-        'file'    => 'The :attribute must be at least :min kilobytes.',
+-        'string'  => 'The :attribute must be at least :min characters.',
+-        'array'   => 'The :attribute must have at least :min items.',
++        'file' => 'The :attribute must be at least :min kilobytes.',
++        'string' => 'The :attribute must be at least :min characters.',
++        'array' => 'The :attribute must have at least :min items.',
+     ],
+-    'not_in'               => 'The selected :attribute is invalid.',
+-    'not_regex'            => 'The :attribute format is invalid.',
+-    'numeric'              => 'The :attribute must be a number.',
+-    'present'              => 'The :attribute field must be present.',
+-    'regex'                => 'The :attribute format is invalid.',
+-    'required'             => 'The :attribute field is required.',
+-    'required_if'          => 'The :attribute field is required when :other is :value.',
+-    'required_unless'      => 'The :attribute field is required unless :other is in :values.',
+-    'required_with'        => 'The :attribute field is required when :values is present.',
+-    'required_with_all'    => 'The :attribute field is required when :values is present.',
+-    'required_without'     => 'The :attribute field is required when :values is not present.',
++    'not_in' => 'The selected :attribute is invalid.',
++    'not_regex' => 'The :attribute format is invalid.',
++    'numeric' => 'The :attribute must be a number.',
++    'present' => 'The :attribute field must be present.',
++    'regex' => 'The :attribute format is invalid.',
++    'required' => 'The :attribute field is required.',
++    'required_if' => 'The :attribute field is required when :other is :value.',
++    'required_unless' => 'The :attribute field is required unless :other is in :values.',
++    'required_with' => 'The :attribute field is required when :values is present.',
++    'required_with_all' => 'The :attribute field is required when :values are present.',
++    'required_without' => 'The :attribute field is required when :values is not present.',
+     'required_without_all' => 'The :attribute field is required when none of :values are present.',
+-    'same'                 => 'The :attribute and :other must match.',
+-    'size'                 => [
++    'same' => 'The :attribute and :other must match.',
++    'size' => [
+         'numeric' => 'The :attribute must be :size.',
+-        'file'    => 'The :attribute must be :size kilobytes.',
+-        'string'  => 'The :attribute must be :size characters.',
+-        'array'   => 'The :attribute must contain :size items.',
++        'file' => 'The :attribute must be :size kilobytes.',
++        'string' => 'The :attribute must be :size characters.',
++        'array' => 'The :attribute must contain :size items.',
+     ],
+-    'string'               => 'The :attribute must be a string.',
+-    'timezone'             => 'The :attribute must be a valid zone.',
+-    'unique'               => 'The :attribute has already been taken.',
+-    'uploaded'             => 'The :attribute failed to upload.',
+-    'url'                  => 'The :attribute format is invalid.',
++    'starts_with' => 'The :attribute must start with one of the following: :values',
++    'string' => 'The :attribute must be a string.',
++    'timezone' => 'The :attribute must be a valid zone.',
++    'unique' => 'The :attribute has already been taken.',
++    'uploaded' => 'The :attribute failed to upload.',
++    'url' => 'The :attribute format is invalid.',
++    'uuid' => 'The :attribute must be a valid UUID.',
+ 
+     /*
+     |--------------------------------------------------------------------------
+@@ -135,9 +138,9 @@ return [
+     | Custom Validation Attributes
+     |--------------------------------------------------------------------------
+     |
+-    | The following language lines are used to swap attribute place-holders
+-    | with something more reader friendly such as E-Mail Address instead
+-    | of "email". This simply helps us make messages a little cleaner.
++    | The following language lines are used to swap our attribute placeholder
++    | with something more reader friendly such as "E-Mail Address" instead
++    | of "email". This simply helps us make our message more expressive.
+     |
+     */
+ 
+diff --git a/LaravelDiffApp/resources/views/welcome.blade.php b/LaravelDiffApp/resources/views/welcome.blade.php
+index 9180a76..044b874 100644
+--- a/LaravelDiffApp/resources/views/welcome.blade.php
++++ b/LaravelDiffApp/resources/views/welcome.blade.php
+@@ -1,14 +1,13 @@
+ <!doctype html>
+-<html lang="{{ app()->getLocale() }}">
++<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+     <head>
+         <meta charset="utf-8">
+-        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+         <meta name="viewport" content="width=device-width, initial-scale=1">
+ 
+         <title>Laravel</title>
+ 
+         <!-- Fonts -->
+-        <link href="https://fonts.googleapis.com/css?family=Nunito:200,600" rel="stylesheet" type="text/css">
++        <link href="https://fonts.googleapis.com/css?family=Nunito:200,600" rel="stylesheet">
+ 
+         <!-- Styles -->
+         <style>
+@@ -52,7 +51,7 @@
+             .links > a {
+                 color: #636b6f;
+                 padding: 0 25px;
+-                font-size: 12px;
++                font-size: 13px;
+                 font-weight: 600;
+                 letter-spacing: .1rem;
+                 text-decoration: none;
+@@ -72,7 +71,10 @@
+                         <a href="{{ url('/home') }}">Home</a>
+                     @else
+                         <a href="{{ route('login') }}">Login</a>
+-                        <a href="{{ route('register') }}">Register</a>
++
++                        @if (Route::has('register'))
++                            <a href="{{ route('register') }}">Register</a>
++                        @endif
+                     @endauth
+                 </div>
+             @endif
+@@ -83,9 +85,10 @@
+                 </div>
+ 
+                 <div class="links">
+-                    <a href="https://laravel.com/docs">Documentation</a>
++                    <a href="https://laravel.com/docs">Docs</a>
+                     <a href="https://laracasts.com">Laracasts</a>
+                     <a href="https://laravel-news.com">News</a>
++                    <a href="https://blog.laravel.com">Blog</a>
+                     <a href="https://nova.laravel.com">Nova</a>
+                     <a href="https://forge.laravel.com">Forge</a>
+                     <a href="https://github.com/laravel/laravel">GitHub</a>
+diff --git a/LaravelDiffApp/storage/framework/cache/.gitignore b/LaravelDiffApp/storage/framework/cache/.gitignore
+index d6b7ef3..01e4a6c 100644
+--- a/LaravelDiffApp/storage/framework/cache/.gitignore
++++ b/LaravelDiffApp/storage/framework/cache/.gitignore
+@@ -1,2 +1,3 @@
+ *
++!data/
+ !.gitignore
+diff --git a/LaravelDiffApp/storage/framework/cache/data/.gitignore b/LaravelDiffApp/storage/framework/cache/data/.gitignore
+new file mode 100644
+index 0000000..d6b7ef3
+--- /dev/null
++++ b/LaravelDiffApp/storage/framework/cache/data/.gitignore
+@@ -0,0 +1,2 @@
++*
++!.gitignore

@@ -1,0 +1,542 @@
+diff --git a/LaravelDiffApp/.env.example b/LaravelDiffApp/.env.example
+index 604b401..d058c34 100644
+--- a/LaravelDiffApp/.env.example
++++ b/LaravelDiffApp/.env.example
+@@ -9,9 +9,9 @@ LOG_CHANNEL=stack
+ DB_CONNECTION=mysql
+ DB_HOST=127.0.0.1
+ DB_PORT=3306
+-DB_DATABASE=laravel
+-DB_USERNAME=root
+-DB_PASSWORD=
++DB_DATABASE=homestead
++DB_USERNAME=homestead
++DB_PASSWORD=secret
+ 
+ BROADCAST_DRIVER=log
+ CACHE_DRIVER=file
+diff --git a/LaravelDiffApp/.gitignore b/LaravelDiffApp/.gitignore
+index 0f7df0f..59e8f45 100644
+--- a/LaravelDiffApp/.gitignore
++++ b/LaravelDiffApp/.gitignore
+@@ -4,7 +4,6 @@
+ /storage/*.key
+ /vendor
+ .env
+-.env.backup
+ .phpunit.result.cache
+ Homestead.json
+ Homestead.yaml
+diff --git a/LaravelDiffApp/app/Http/Kernel.php b/LaravelDiffApp/app/Http/Kernel.php
+index 0d7d8c1..a3d8c48 100644
+--- a/LaravelDiffApp/app/Http/Kernel.php
++++ b/LaravelDiffApp/app/Http/Kernel.php
+@@ -14,11 +14,11 @@ class Kernel extends HttpKernel
+      * @var array
+      */
+     protected $middleware = [
+-        \App\Http\Middleware\TrustProxies::class,
+         \App\Http\Middleware\CheckForMaintenanceMode::class,
+         \Illuminate\Foundation\Http\Middleware\ValidatePostSize::class,
+         \App\Http\Middleware\TrimStrings::class,
+         \Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull::class,
++        \App\Http\Middleware\TrustProxies::class,
+     ];
+ 
+     /**
+@@ -73,7 +73,6 @@ class Kernel extends HttpKernel
+         \Illuminate\Session\Middleware\StartSession::class,
+         \Illuminate\View\Middleware\ShareErrorsFromSession::class,
+         \App\Http\Middleware\Authenticate::class,
+-        \Illuminate\Routing\Middleware\ThrottleRequests::class,
+         \Illuminate\Session\Middleware\AuthenticateSession::class,
+         \Illuminate\Routing\Middleware\SubstituteBindings::class,
+         \Illuminate\Auth\Middleware\Authorize::class,
+diff --git a/LaravelDiffApp/composer.json b/LaravelDiffApp/composer.json
+index 88385db..8e2b2d7 100644
+--- a/LaravelDiffApp/composer.json
++++ b/LaravelDiffApp/composer.json
+@@ -8,17 +8,18 @@
+     ],
+     "license": "MIT",
+     "require": {
+-        "php": "^7.2",
++        "php": "^7.1.3",
+         "fideloper/proxy": "^4.0",
+-        "laravel/framework": "^6.0",
++        "laravel/framework": "5.8.*",
+         "laravel/tinker": "^1.0"
+     },
+     "require-dev": {
++        "beyondcode/laravel-dump-server": "^1.0",
+         "filp/whoops": "^2.0",
+         "fzaninotto/faker": "^1.4",
+         "mockery/mockery": "^1.0",
+         "nunomaduro/collision": "^3.0",
+-        "phpunit/phpunit": "^8.0"
++        "phpunit/phpunit": "^7.5"
+     },
+     "config": {
+         "optimize-autoloader": true,
+diff --git a/LaravelDiffApp/config/broadcasting.php b/LaravelDiffApp/config/broadcasting.php
+index 3bba110..3ca45ea 100644
+--- a/LaravelDiffApp/config/broadcasting.php
++++ b/LaravelDiffApp/config/broadcasting.php
+@@ -37,7 +37,7 @@ return [
+             'app_id' => env('PUSHER_APP_ID'),
+             'options' => [
+                 'cluster' => env('PUSHER_APP_CLUSTER'),
+-                'useTLS' => true,
++                'encrypted' => true,
+             ],
+         ],
+ 
+diff --git a/LaravelDiffApp/config/cache.php b/LaravelDiffApp/config/cache.php
+index 46751e6..30f0cae 100644
+--- a/LaravelDiffApp/config/cache.php
++++ b/LaravelDiffApp/config/cache.php
+@@ -82,7 +82,6 @@ return [
+             'secret' => env('AWS_SECRET_ACCESS_KEY'),
+             'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
+             'table' => env('DYNAMODB_CACHE_TABLE', 'cache'),
+-            'endpoint' => env('DYNAMODB_ENDPOINT'),
+         ],
+ 
+     ],
+diff --git a/LaravelDiffApp/config/database.php b/LaravelDiffApp/config/database.php
+index 199382d..0cf5445 100644
+--- a/LaravelDiffApp/config/database.php
++++ b/LaravelDiffApp/config/database.php
+@@ -119,15 +119,14 @@ return [
+ 
+     'redis' => [
+ 
+-        'client' => env('REDIS_CLIENT', 'phpredis'),
++        'client' => env('REDIS_CLIENT', 'predis'),
+ 
+         'options' => [
+-            'cluster' => env('REDIS_CLUSTER', 'redis'),
+-            'prefix' => env('REDIS_PREFIX', Str::slug(env('APP_NAME', 'laravel'), '_').'_database_'),
++            'cluster' => env('REDIS_CLUSTER', 'predis'),
++            'prefix' => Str::slug(env('APP_NAME', 'laravel'), '_').'_database_',
+         ],
+ 
+         'default' => [
+-            'url' => env('REDIS_URL'),
+             'host' => env('REDIS_HOST', '127.0.0.1'),
+             'password' => env('REDIS_PASSWORD', null),
+             'port' => env('REDIS_PORT', 6379),
+@@ -135,7 +134,6 @@ return [
+         ],
+ 
+         'cache' => [
+-            'url' => env('REDIS_URL'),
+             'host' => env('REDIS_HOST', '127.0.0.1'),
+             'password' => env('REDIS_PASSWORD', null),
+             'port' => env('REDIS_PORT', 6379),
+diff --git a/LaravelDiffApp/config/filesystems.php b/LaravelDiffApp/config/filesystems.php
+index ec6a7ce..77fa5de 100644
+--- a/LaravelDiffApp/config/filesystems.php
++++ b/LaravelDiffApp/config/filesystems.php
+@@ -37,7 +37,7 @@ return [
+     | may even configure multiple disks of the same driver. Defaults have
+     | been setup for each driver as an example of the required options.
+     |
+-    | Supported Drivers: "local", "ftp", "sftp", "s3"
++    | Supported Drivers: "local", "ftp", "sftp", "s3", "rackspace"
+     |
+     */
+ 
+diff --git a/LaravelDiffApp/config/mail.php b/LaravelDiffApp/config/mail.php
+index 3c65eb3..6f8469f 100644
+--- a/LaravelDiffApp/config/mail.php
++++ b/LaravelDiffApp/config/mail.php
+@@ -11,8 +11,8 @@ return [
+     | sending of e-mail. You may specify which one you're using throughout
+     | your application here. By default, Laravel is setup for SMTP mail.
+     |
+-    | Supported: "smtp", "sendmail", "mailgun", "ses",
+-    |            "postmark", "log", "array"
++    | Supported: "smtp", "sendmail", "mailgun", "mandrill", "ses",
++    |            "sparkpost", "postmark", "log", "array"
+     |
+     */
+ 
+diff --git a/LaravelDiffApp/config/queue.php b/LaravelDiffApp/config/queue.php
+index 3a30d6c..07c7d2a 100644
+--- a/LaravelDiffApp/config/queue.php
++++ b/LaravelDiffApp/config/queue.php
+@@ -80,7 +80,6 @@ return [
+     */
+ 
+     'failed' => [
+-        'driver' => env('QUEUE_FAILED_DRIVER', 'database'),
+         'database' => env('DB_CONNECTION', 'mysql'),
+         'table' => 'failed_jobs',
+     ],
+diff --git a/LaravelDiffApp/config/services.php b/LaravelDiffApp/config/services.php
+index 2a1d616..f026b2c 100644
+--- a/LaravelDiffApp/config/services.php
++++ b/LaravelDiffApp/config/services.php
+@@ -8,9 +8,9 @@ return [
+     |--------------------------------------------------------------------------
+     |
+     | This file is for storing the credentials for third party services such
+-    | as Mailgun, Postmark, AWS and more. This file provides the de facto
+-    | location for this type of information, allowing packages to have
+-    | a conventional file to locate the various service credentials.
++    | as Stripe, Mailgun, SparkPost and others. This file provides a sane
++    | default location for this type of information, allowing packages
++    | to have a conventional place to find your various credentials.
+     |
+     */
+ 
+@@ -30,4 +30,18 @@ return [
+         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
+     ],
+ 
++    'sparkpost' => [
++        'secret' => env('SPARKPOST_SECRET'),
++    ],
++
++    'stripe' => [
++        'model' => App\User::class,
++        'key' => env('STRIPE_KEY'),
++        'secret' => env('STRIPE_SECRET'),
++        'webhook' => [
++            'secret' => env('STRIPE_WEBHOOK_SECRET'),
++            'tolerance' => env('STRIPE_WEBHOOK_TOLERANCE', 300),
++        ],
++    ],
++
+ ];
+diff --git a/LaravelDiffApp/database/migrations/2019_08_19_000000_create_failed_jobs_table.php b/LaravelDiffApp/database/migrations/2019_08_19_000000_create_failed_jobs_table.php
+deleted file mode 100644
+index d432dff..0000000
+--- a/LaravelDiffApp/database/migrations/2019_08_19_000000_create_failed_jobs_table.php
++++ /dev/null
+@@ -1,35 +0,0 @@
+-<?php
+-
+-use Illuminate\Support\Facades\Schema;
+-use Illuminate\Database\Schema\Blueprint;
+-use Illuminate\Database\Migrations\Migration;
+-
+-class CreateFailedJobsTable extends Migration
+-{
+-    /**
+-     * Run the migrations.
+-     *
+-     * @return void
+-     */
+-    public function up()
+-    {
+-        Schema::create('failed_jobs', function (Blueprint $table) {
+-            $table->bigIncrements('id');
+-            $table->text('connection');
+-            $table->text('queue');
+-            $table->longText('payload');
+-            $table->longText('exception');
+-            $table->timestamp('failed_at')->useCurrent();
+-        });
+-    }
+-
+-    /**
+-     * Reverse the migrations.
+-     *
+-     * @return void
+-     */
+-    public function down()
+-    {
+-        Schema::dropIfExists('failed_jobs');
+-    }
+-}
+diff --git a/LaravelDiffApp/package.json b/LaravelDiffApp/package.json
+index 9fcb8ee..52311d2 100644
+--- a/LaravelDiffApp/package.json
++++ b/LaravelDiffApp/package.json
+@@ -10,12 +10,16 @@
+         "production": "cross-env NODE_ENV=production node_modules/webpack/bin/webpack.js --no-progress --hide-modules --config=node_modules/laravel-mix/setup/webpack.config.js"
+     },
+     "devDependencies": {
+-        "axios": "^0.19",
++        "axios": "^0.18",
++        "bootstrap": "^4.1.0",
+         "cross-env": "^5.1",
++        "jquery": "^3.2",
+         "laravel-mix": "^4.0.7",
+-        "lodash": "^4.17.13",
++        "lodash": "^4.17.5",
++        "popper.js": "^1.12",
+         "resolve-url-loader": "^2.3.1",
+         "sass": "^1.15.2",
+-        "sass-loader": "^7.1.0"
++        "sass-loader": "^7.1.0",
++        "vue": "^2.5.17"
+     }
+ }
+diff --git a/LaravelDiffApp/phpunit.xml b/LaravelDiffApp/phpunit.xml
+index d562be8..da4add3 100644
+--- a/LaravelDiffApp/phpunit.xml
++++ b/LaravelDiffApp/phpunit.xml
+@@ -1,7 +1,7 @@
+ <?xml version="1.0" encoding="UTF-8"?>
+ <phpunit backupGlobals="false"
+          backupStaticAttributes="false"
+-         bootstrap="tests/bootstrap.php"
++         bootstrap="vendor/autoload.php"
+          colors="true"
+          convertErrorsToExceptions="true"
+          convertNoticesToExceptions="true"
+@@ -29,10 +29,5 @@
+         <server name="MAIL_DRIVER" value="array"/>
+         <server name="QUEUE_CONNECTION" value="sync"/>
+         <server name="SESSION_DRIVER" value="array"/>
+-        <server name="APP_CONFIG_CACHE" value="bootstrap/cache/config.phpunit.php"/>
+-        <server name="APP_SERVICES_CACHE" value="bootstrap/cache/services.phpunit.php"/>
+-        <server name="APP_PACKAGES_CACHE" value="bootstrap/cache/packages.phpunit.php"/>
+-        <server name="APP_ROUTES_CACHE" value="bootstrap/cache/routes.phpunit.php"/>
+-        <server name="APP_EVENTS_CACHE" value="bootstrap/cache/events.phpunit.php"/>
+     </php>
+ </phpunit>
+diff --git a/LaravelDiffApp/readme.md b/LaravelDiffApp/readme.md
+index f95b2ec..8b5717e 100644
+--- a/LaravelDiffApp/readme.md
++++ b/LaravelDiffApp/readme.md
+@@ -1,4 +1,4 @@
+-<p align="center"><img src="https://res.cloudinary.com/dtfbvvkyp/image/upload/v1566331377/laravel-logolockup-cmyk-red.svg" width="400"></p>
++<p align="center"><img src="https://laravel.com/assets/img/components/logo-laravel.svg"></p>
+ 
+ <p align="center">
+ <a href="https://travis-ci.org/laravel/framework"><img src="https://travis-ci.org/laravel/framework.svg" alt="Build Status"></a>
+@@ -25,7 +25,7 @@ Laravel is accessible, powerful, and provides tools required for large, robust a
+ 
+ Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+ 
+-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains over 1500 video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
++If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains over 1400 video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+ 
+ ## Laravel Sponsors
+ 
+diff --git a/LaravelDiffApp/resources/js/app.js b/LaravelDiffApp/resources/js/app.js
+index 40c55f6..a1efb5c 100644
+--- a/LaravelDiffApp/resources/js/app.js
++++ b/LaravelDiffApp/resources/js/app.js
+@@ -1 +1,32 @@
++/**
++ * First we will load all of this project's JavaScript dependencies which
++ * includes Vue and other libraries. It is a great starting point when
++ * building robust, powerful web applications using Vue and Laravel.
++ */
++
+ require('./bootstrap');
++
++window.Vue = require('vue');
++
++/**
++ * The following block of code may be used to automatically register your
++ * Vue components. It will recursively scan this directory for the Vue
++ * components and automatically register them with their "basename".
++ *
++ * Eg. ./components/ExampleComponent.vue -> <example-component></example-component>
++ */
++
++// const files = require.context('./', true, /\.vue$/i);
++// files.keys().map(key => Vue.component(key.split('/').pop().split('.')[0], files(key).default));
++
++Vue.component('example-component', require('./components/ExampleComponent.vue').default);
++
++/**
++ * Next, we will create a fresh Vue application instance and attach it to
++ * the page. Then, you may begin adding components to this application
++ * or customize the JavaScript scaffolding to fit your unique needs.
++ */
++
++const app = new Vue({
++    el: '#app',
++});
+diff --git a/LaravelDiffApp/resources/js/bootstrap.js b/LaravelDiffApp/resources/js/bootstrap.js
+index d11586d..f29bb81 100644
+--- a/LaravelDiffApp/resources/js/bootstrap.js
++++ b/LaravelDiffApp/resources/js/bootstrap.js
+@@ -1,5 +1,18 @@
+ window._ = require('lodash');
+ 
++/**
++ * We'll load jQuery and the Bootstrap jQuery plugin which provides support
++ * for JavaScript based Bootstrap features such as modals and tabs. This
++ * code may be modified to fit the specific needs of your application.
++ */
++
++try {
++    window.Popper = require('popper.js').default;
++    window.$ = window.jQuery = require('jquery');
++
++    require('bootstrap');
++} catch (e) {}
++
+ /**
+  * We'll load the axios HTTP library which allows us to easily issue requests
+  * to our Laravel back-end. This library automatically handles sending the
+@@ -10,13 +23,27 @@ window.axios = require('axios');
+ 
+ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
+ 
++/**
++ * Next we will register the CSRF Token as a common header with Axios so that
++ * all outgoing HTTP requests automatically have it attached. This is just
++ * a simple convenience so we don't have to attach every token manually.
++ */
++
++let token = document.head.querySelector('meta[name="csrf-token"]');
++
++if (token) {
++    window.axios.defaults.headers.common['X-CSRF-TOKEN'] = token.content;
++} else {
++    console.error('CSRF token not found: https://laravel.com/docs/csrf#csrf-x-csrf-token');
++}
++
+ /**
+  * Echo exposes an expressive API for subscribing to channels and listening
+  * for events that are broadcast by Laravel. Echo and event broadcasting
+  * allows your team to easily build robust real-time web applications.
+  */
+ 
+-// import Echo from 'laravel-echo';
++// import Echo from 'laravel-echo'
+ 
+ // window.Pusher = require('pusher-js');
+ 
+diff --git a/LaravelDiffApp/resources/js/components/ExampleComponent.vue b/LaravelDiffApp/resources/js/components/ExampleComponent.vue
+new file mode 100644
+index 0000000..3fb9f9a
+--- /dev/null
++++ b/LaravelDiffApp/resources/js/components/ExampleComponent.vue
+@@ -0,0 +1,23 @@
++<template>
++    <div class="container">
++        <div class="row justify-content-center">
++            <div class="col-md-8">
++                <div class="card">
++                    <div class="card-header">Example Component</div>
++
++                    <div class="card-body">
++                        I'm an example component.
++                    </div>
++                </div>
++            </div>
++        </div>
++    </div>
++</template>
++
++<script>
++    export default {
++        mounted() {
++            console.log('Component mounted.')
++        }
++    }
++</script>
+diff --git a/LaravelDiffApp/resources/lang/en/passwords.php b/LaravelDiffApp/resources/lang/en/passwords.php
+index f3b01a4..bf6caf6 100644
+--- a/LaravelDiffApp/resources/lang/en/passwords.php
++++ b/LaravelDiffApp/resources/lang/en/passwords.php
+@@ -13,6 +13,7 @@ return [
+     |
+     */
+ 
++    'password' => 'Passwords must be at least eight characters and match the confirmation.',
+     'reset' => 'Your password has been reset!',
+     'sent' => 'We have e-mailed your password reset link!',
+     'token' => 'This password reset token is invalid.',
+diff --git a/LaravelDiffApp/resources/sass/_variables.scss b/LaravelDiffApp/resources/sass/_variables.scss
+new file mode 100644
+index 0000000..0407ab5
+--- /dev/null
++++ b/LaravelDiffApp/resources/sass/_variables.scss
+@@ -0,0 +1,19 @@
++// Body
++$body-bg: #f8fafc;
++
++// Typography
++$font-family-sans-serif: 'Nunito', sans-serif;
++$font-size-base: 0.9rem;
++$line-height-base: 1.6;
++
++// Colors
++$blue: #3490dc;
++$indigo: #6574cd;
++$purple: #9561e2;
++$pink: #f66d9b;
++$red: #e3342f;
++$orange: #f6993f;
++$yellow: #ffed4a;
++$green: #38c172;
++$teal: #4dc0b5;
++$cyan: #6cb2eb;
+diff --git a/LaravelDiffApp/resources/sass/app.scss b/LaravelDiffApp/resources/sass/app.scss
+index 8337712..3193ffa 100644
+--- a/LaravelDiffApp/resources/sass/app.scss
++++ b/LaravelDiffApp/resources/sass/app.scss
+@@ -1 +1,8 @@
+-//
++// Fonts
++@import url('https://fonts.googleapis.com/css?family=Nunito');
++
++// Variables
++@import 'variables';
++
++// Bootstrap
++@import '~bootstrap/scss/bootstrap';
+diff --git a/LaravelDiffApp/resources/views/welcome.blade.php b/LaravelDiffApp/resources/views/welcome.blade.php
+index 3fb48cc..044b874 100644
+--- a/LaravelDiffApp/resources/views/welcome.blade.php
++++ b/LaravelDiffApp/resources/views/welcome.blade.php
+@@ -1,4 +1,4 @@
+-<!DOCTYPE html>
++<!doctype html>
+ <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+     <head>
+         <meta charset="utf-8">
+@@ -91,7 +91,6 @@
+                     <a href="https://blog.laravel.com">Blog</a>
+                     <a href="https://nova.laravel.com">Nova</a>
+                     <a href="https://forge.laravel.com">Forge</a>
+-                    <a href="https://vapor.laravel.com">Vapor</a>
+                     <a href="https://github.com/laravel/laravel">GitHub</a>
+                 </div>
+             </div>
+diff --git a/LaravelDiffApp/tests/bootstrap.php b/LaravelDiffApp/tests/bootstrap.php
+deleted file mode 100644
+index 5041c5a..0000000
+--- a/LaravelDiffApp/tests/bootstrap.php
++++ /dev/null
+@@ -1,29 +0,0 @@
+-<?php
+-
+-use Illuminate\Contracts\Console\Kernel;
+-
+-require_once __DIR__.'/../vendor/autoload.php';
+-
+-/*
+-|--------------------------------------------------------------------------
+-| Bootstrap The Test Environment
+-|--------------------------------------------------------------------------
+-|
+-| You may specify console commands that execute once before your test is
+-| run. You are free to add your own additional commands or logic into
+-| this file as needed in order to help your test suite run quicker.
+-|
+-*/
+-
+-$commands = [
+-    'config:cache',
+-    'event:cache',
+-];
+-
+-$app = require __DIR__.'/../bootstrap/app.php';
+-
+-$console = tap($app->make(Kernel::class))->bootstrap();
+-
+-foreach ($commands as $command) {
+-    $console->call($command);
+-}
